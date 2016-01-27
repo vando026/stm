@@ -6,56 +6,98 @@
 ***********************************************************************************************************
 **************************************** Prep Data ********************************************************
 ***********************************************************************************************************
-** Get IIntIDs from Demograpy dataset
+** Get IIntIDs from Demograpy dataset 2014
 use "$source/Demography/DemographyYear", clear
 
 ** Get relevant IDs and vars
-keep IIntID  
 duplicates drop IIntID, force
-rename IIntID ACDIS_IIntID 
+clonevar ACDIS_IIntID = IIntID 
+keep IIntID ACDIS_IIntID Sex 
+distinct IIntID 
 
-** Merge and only keep individuals linked to ACDIS
-merge 1:m ACDIS_IIntID using "$source/ARTemis/LabResults", keep(match) nogen keepusing(TestDate LabTestCode RESULT Sex AgeTested) 
-rename RESULT ViralLoad
+tempfile Demo
+sav "`Demo'"
 
-** Keep specific years
-gen TestYear = year(TestDate)
-keep if inlist(TestYear, 2011, 2012)
+***********************************************************************************************************
+**************************************** Facility VL ******************************************************
+***********************************************************************************************************
+** Merge if only want to keep individuals linked to ACDIS
+use "`Demo'", clear
+
+merge 1:m ACDIS_IIntID using "$source/ARTemis/LabResults" , keep(match) nogen keepusing(TestDate LabTestCode RESULT AgeTested) 
+distinct ACDIS_IIntID 
 
 ** Keep only viral loads
 keep if LabTestCode=="VL"
+rename RESULT ViralLoad
+sum ViralLoad, d
+
+** In 2011, VL or 1 or 40 is undetectable
+if "$VLImpute"=="Yes" {
+  set seed 339487734
+  gen RandomUndetectable =ceil(1500*runiform()) if ViralLoad <=40
+  replace ViralLoad = RandomUndetectable if ViralLoad<=40
+} 
+
+** Keep specific years
+gen TestYear = year(TestDate)
+keep if inlist(TestYear, 2011)
 
 ** Age
 keep if inrange(AgeTested, 15, 65)
-egen Age = cut(AgeTested), at(15(10)75) icode label
+egen Age = cut(AgeTested), at(15, 25, 35, 45, 55, 75) icode label
+
+drop ACDIS_IIntID 
+keep IIntID Sex TestDate TestYear ViralLoad Age
 
 ** Save datasets 
 preserve
 keep if TestYear==2011 
-save "$derived/VL2011", replace
-restore
-preserve
-keep if TestYear==2012 
-save "$derived/VL2012", replace
+distinct IIntID 
+save "$derived/FVL2011", replace
 restore
 
+** preserve
+** keep if TestYear==2012 
+** distinct IIntID 
+** save "$derived/FVL2012", replace
+** restore
 
 ***********************************************************************************************************
-**************************************** Prep Community VL ************************************************
+********************************************* Community VL ************************************************
 ***********************************************************************************************************
-insheet using "$source\CommunityViralLoadWithARtemisData29jun2013.csv", clear
+use "$source/Individuals/RD01-01 ACDIS Individuals", clear
+keep IIntID DateOfBirth 
+duplicates drop IIntID, force
+tempfile Individuals
+save "`Individuals'"
 
-fdate date* , sfmt("YMD")
+import excel using "$source/CommunityViralLoadWithIIntId10dec2012.xlsx", clear firstrow
+
+fdate DateReceivedAtACVL, sfmt("DMY")
+rename iintid IIntID 
+rename datereceivedatacvl TestDate
+gen TestYear = year(TestDate)
+
+** Get Sex 
+merge m:1 IIntID using "`Demo'", keep(match) nogen keepusing(Sex)
+merge m:1 IIntID using "`Individuals'", keep(match) nogen
+
+gen AgeYr = int((TestDate - DateOfBirth)/365.25) 
+egen Age = cut(AgeYr), at(15(10)75) icode label
 
 set seed 339487731
 gen RandomUndetectable =int(1500*runiform()) if vlbelowldl == "Yes"
 replace vlresultcopiesml=RandomUndetectable if  vlbelowldl=="Yes"
 
+rename vlresultcopiesml ViralLoad
+keep IIntID Sex TestDate TestYear ViralLoad Age
 
+save "$derived/CVL2011", replace
 
-
-
-
-
-
-
+/*
+use "$source/Demography/DemographyYear", clear
+keep IIntID ObservationStart
+keep if IIntID==13
+bysort IIntID (ObservationStart): gen ObservationEnd = ObservationStart[_n+1] - 1
+format ObservationEnd %td

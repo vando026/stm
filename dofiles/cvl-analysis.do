@@ -3,26 +3,44 @@
 //  project:	Name
 //  author:     AV / Created: 19Jan2016
 
+** The plan is to produce graphs for CVL and FVL by year 2011 and gender
+
 ***********************************************************************************************************
 **************************************** Analyze **********************************************************
 ***********************************************************************************************************
-** Prop over VL 50000
+use "$derived/FVL2011", clear 
 gen Over50k = cond(ViralLoad>=50000, 1, 0)
 
-** Plot
-foreach year in 2011 2012 {
-  ciplot ViralLoad if TestYear==`year' & Sex==2, by(Age) title("`year': Females") name(F`year')
-  ciplot ViralLoad if TestYear==`year' & Sex==1, by(Age) title("`year': Males") name(M`year')
+global methods "mean median gmean"
+foreach m of global methods {
+  plotVL ViralLoad, data(FVL) year(2011) method(`m')
 }
-graph combine F2011 M2011 F2012 M2012, col(2) iscale(0.5) saving("$derived/VLplot")
+** plotVL Over50k, data(FVL) year(2011) prop 
 
-foreach year in 2011 2012 {
-  ciplot Over50k if TestYear==`year' & Sex==2, by(Age) title("`year': Females") name(F`year'_)
-  ciplot Over50k if TestYear==`year' & Sex==1, by(Age) title("`year': Males") name(M`year'_)
+use "$derived/CVL2011", clear 
+gen Over50k = cond(ViralLoad>=50000, 1, 0)
+foreach m of global methods {
+  plotVL ViralLoad, data(CVL) year(2011) method(`m') comp
 }
-graph combine F2011_ M2011_ F2012_ M2012_, col(2) iscale(0.5) saving("$derived/Prop50k", replace)
+
+** plotVL Over50k, data(CVL) year(2011) comp prop
 
 
+use "$derived/FVL2011", clear 
+gen logVL=log(ViralLoad)
+bysort Age: egen logVLmean=mean(logVL)
+gen gmeanVL=exp(logVLmean)
+bysort Age: egen meanVL = mean(ViralLoad)
+bysort Age: ci meanVL
+
+gen baseline=1
+regress logVL baseline,noconst eform(GM/Ratio) robust
+regress logVL baseline if Age==1,noconst eform(GM/Ratio) robust
+
+
+
+
+/*
 statsby mean50k=r(mean) sd50k=r(sd), ///
     by(TestYear Sex Age) saving("$derived/Over50k", replace): sum Over50k, d
 
