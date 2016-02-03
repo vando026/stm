@@ -45,7 +45,7 @@ keep if inlist(TestYear, 2011)
 
 ** Age
 keep if inrange(AgeTested, 15, 65)
-egen Age = cut(AgeTested), at(15, 25, 35, 45, 55, 75) icode label
+egen Age = cut(AgeTested), at(15, 20, 25, 35, 45, 55, 100) icode label
 
 drop ACDIS_IIntID 
 keep IIntID Sex TestDate TestYear ViralLoad Age
@@ -57,12 +57,6 @@ distinct IIntID
 save "$derived/FVL2011", replace
 restore
 
-** preserve
-** keep if TestYear==2012 
-** distinct IIntID 
-** save "$derived/FVL2012", replace
-** restore
-
 ***********************************************************************************************************
 ********************************************* Community VL ************************************************
 ***********************************************************************************************************
@@ -72,9 +66,9 @@ duplicates drop IIntID, force
 tempfile Individuals
 save "`Individuals'"
 
-import excel using "$source/CommunityViralLoadWithIIntId10dec2012.xlsx", clear firstrow
+insheet using "$source/CommunityVL/CommunityViralLoadWithARtemisData29jun2013.csv", clear 
+fdate datereceivedatacvl, sfmt("YMD")
 
-fdate DateReceivedAtACVL, sfmt("DMY")
 rename iintid IIntID 
 rename datereceivedatacvl TestDate
 gen TestYear = year(TestDate)
@@ -84,13 +78,14 @@ merge m:1 IIntID using "`Demo'", keep(match) nogen keepusing(Sex)
 merge m:1 IIntID using "`Individuals'", keep(match) nogen
 
 gen AgeYr = int((TestDate - DateOfBirth)/365.25) 
-egen Age = cut(AgeYr), at(15(10)75) icode label
+egen Age = cut(AgeYr), at(15, 20, 25, 35, 45, 55, 100) icode label
 
 set seed 339487731
 gen RandomUndetectable =int(1500*runiform()) if vlbelowldl == "Yes"
-replace vlresultcopiesml=RandomUndetectable if  vlbelowldl=="Yes"
-
+replace vlresultcopiesml =RandomUndetectable if  vlbelowldl =="Yes"
 rename vlresultcopiesml ViralLoad
+drop if missing(ViralLoad)
+
 keep IIntID Sex TestDate TestYear ViralLoad Age
 
 save "$derived/CVL2011", replace

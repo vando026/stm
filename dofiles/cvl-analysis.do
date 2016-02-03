@@ -26,20 +26,6 @@ foreach m of global methods {
 ** plotVL Over50k, data(CVL) year(2011) comp prop
 
 
-use "$derived/FVL2011", clear 
-gen logVL=log(ViralLoad)
-bysort Age: egen logVLmean=mean(logVL)
-gen gmeanVL=exp(logVLmean)
-bysort Age: egen meanVL = mean(ViralLoad)
-bysort Age: ci meanVL
-
-gen baseline=1
-regress logVL baseline,noconst eform(GM/Ratio) robust
-regress logVL baseline if Age==1,noconst eform(GM/Ratio) robust
-
-
-
-
 /*
 statsby mean50k=r(mean) sd50k=r(sd), ///
     by(TestYear Sex Age) saving("$derived/Over50k", replace): sum Over50k, d
