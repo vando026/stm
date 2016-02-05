@@ -16,30 +16,6 @@ rename IIntId IIntID
 keep IIntID id_anonymised VisitDate HIVResult AgeAtVisit Sex
 
 ***********************************************************************************************************
-****************************************Age and Censoring**************************************************
-***********************************************************************************************************
-** After 2007, males > 55 years and females > 50 years were included in HIV testing. So to be consistent
-** I will censor at these age cut-offs from 2007 onward. Also drop all < 15 years of age
-gen _TestYear = year(VisitDate)
-drop if _TestYear > 2011
-
-** This will keep all men between 15 and 54
-drop if !inrange(AgeAtVisit, 15, 55)
-** Now keep all woman between 15 and 49
-drop if Sex==2 & AgeAtVisit>=50
-
-bysort Sex: sum AgeAtVisit 
-
-***********************************************************************************************************
-**************************************** Residents ********************************************************
-***********************************************************************************************************
-** Keep only residents that have > 50% episodes 
-merge m:1 IIntID using "$AC_Data/Derived/HIVSurveillance/Residents", keep(1 3) nogen
-if "$ResMore50"=="Yes" {
-  keep if ResMore50==1	
-}
-
-***********************************************************************************************************
 **************************************** Get the dates ****************************************************
 ***********************************************************************************************************
 sort IIntID VisitDate 
@@ -48,6 +24,36 @@ tab HIVResult , nolab
 ** Associate dates with Test result
 bysort IIntID (VisitDate): gen HIVNegative = cond(HIVResult==0, VisitDate, .)
 bysort IIntID (VisitDate): gen HIVPositive = cond(HIVResult==1, VisitDate, .)
+format HIV* %td
+
+** Now we want to see if there is any HIV negatives < 2012
+gen YearNeg = year(HIVNegative)
+gen YearPos = year(HIVPositive)
+bysort IIntID: egen AnyHIVNegPre_2012 = max(YearNeg < 2012)
+bysort IIntID: egen AnyHIVNegPost_2011 = max(inrange(YearNeg, 2012, 2015))
+bysort IIntID: egen AnyHIVPosPost_2011 = max(inrange(YearPos, 2011, 2015))
+bysort IIntID: egen AnyHIVPosPre_2011 = max(YearPos < 2011)
+
+** Now identify Repeat tester if has two tests and one pre prior to 2010. 
+gen RepeatTester = (AnyHIVNegPre_2012 & AnyHIVNegPost_2011) | (AnyHIVNegPre_2012 & AnyHIVPosPost_2011)
+** However, if this individual seroconverted prior to 2011 then exclude from analysis. EG IIntID=45344
+replace RepeatTester = 0 if AnyHIVPosPre_2011==1
+keep if RepeatTester==1
+distinct IIntID 
+gen SeroConverter = AnyHIVPosPost_2011
+distinct IIntID if SeroConverter==1
+
+
+***********************************************************************************************************
+****************************************Age and Censoring**************************************************
+***********************************************************************************************************
+** This will keep all men between 15 and 54
+** drop if !inrange(AgeAtVisit, 15, 55)
+** Now keep all woman between 15 and 49
+** drop if Sex==2 & AgeAtVisit>=50
+** bysort Sex: sum AgeAtVisit 
+
+
 
 ** Now make the dates
 bysort IIntID   : egen EarliestHIVNegative = min(HIVNegative)
@@ -62,7 +68,6 @@ collapse (first) EarliestHIVNegative LatestHIVNegative EarliestHIVPositive Lates
 ** Sanity check
 assert EarliestHIVNegative <= LatestHIVNegative if !missing(EarliestHIVNegative, LatestHIVNegative)
 
-** notes: This dataset drops all individuals with a <50% residency and drops men > 54 and woman > 49 years 
 label data "HIV dates for all ACDIS individuals (see notes)"
 save "$derived/ac-HIV_Dates_2011", replace
 
@@ -104,17 +109,15 @@ drop if (EarliestHIVNegative==LatestHIVNegative) & HasEar_LateNegTest==1
 ***********************************************************************************************************
 ** Add the ARTemis data to use EarliestTreatmentDate to reduce the interval
 if "$artemis"=="Yes" {
+  ** Bring in Earliest ART dates from ARTemis_main.do file
+  merge m:1 IIntID using "$temp/ART_Earliest", keepusing(IIntID EarliestTreatmentDate) 
 
-** Bring in Earliest ART dates from ARTemis_main.do file
-merge m:1 IIntID using "$temp/ART_Earliest", keepusing(IIntID EarliestTreatmentDate) 
+  ** Only keep individuals that in current dataset or are matched from Artemis
+  keep if inlist(_merge, 1, 3)
 
-** Only keep individuals that in current dataset or are matched from Artemis
-keep if inlist(_merge, 1, 3)
-
-** Now, we need to move the EarliestHIVPositive left if EarliestTreatmentDate comes before this date
-replace EarliestHIVPositive = EarliestTreatmentDate if !missing(EarliestHIVPositive) & inrange(EarliestTreatmentDate, LatestHIVNegative, EarliestHIVPositive)
-
-** Note 28Apr2015: only 175 changes made, not very substantial. We should really think about adding positives too
+  ** Now, we need to move the EarliestHIVPositive left if EarliestTreatmentDate comes before this date
+  replace EarliestHIVPositive = EarliestTreatmentDate if !missing(EarliestHIVPositive) & inrange(EarliestTreatmentDate, LatestHIVNegative, EarliestHIVPositive)
+  ** Note 28Apr2015: only 175 changes made, not very substantial. We should really think about adding positives too
 }
 
 ***********************************************************************************************************
@@ -127,16 +130,20 @@ assert !missing(EarliestHIVPositive, LatestHIVNegative) if !missing(EarliestHIVP
 ** Now lets identify who seroconverted or not. Give a 1 to indiv who dont have miss values for EarliestHIVPositive
 gen SeroConvertEvent = cond(!missing(EarliestHIVPositive), 1, 0)
 distinct IIntID if SeroConvertEvent==1
+drop _* Has*
 
-gen IntervalLength = (EarliestHIVPositive - LatestHIVNegative)/365.25 if SeroConvertEvent==1
-sum IntervalLength, d
+***********************************************************************************************************
+*************************************** Keep if 3 months***************************************************
+***********************************************************************************************************
+distinct IIntID 
+capture drop Diff
+gen Diff = (date("01-01-2011", "DMY") - EarliestHIVNegative)/30.4 if year(EarliestHIVNegative) < 2011
+gen Keep = cond(missing(Diff) | inrange(Diff, 0, 3), 1, 0)
+keep if Keep==1
+distinct IIntID 
 
-** How many indiv have interval < 3,6,12mo?
-egen IntervalLengthCat = cut(IntervalLength), at(0.25, 0.5, 0.75, 1, 20) label
-distinct IIntID if IntervalLength < 1
-** Note 03Jun2015: So seems like 27 indiv have less than a 9mo interval
 
-**********************************************************************************************************************
+/**********************************************************************************************************************
 **------------------------------------------------------------------------------------------------------------------**
 **       The code below uses different methods to impute the end point
 **       Enter the method to be computed: 1) midpoint 2) random 3) endpoint 4) intcens
