@@ -21,28 +21,64 @@ save "`Individuals'"
 **************************************** Demography *******************************************************
 ***********************************************************************************************************
 use "$source/Demography/DemographyYear", clear
-keep IIntID BSIntID ExpYear Obs*  Sex
+keep if ExpYear == 2011
+keep IIntID BSIntID Sex
 drop if missing(BSIntID)
 
-** Dont need any obs after 2011
-drop if year(ObservationStart) > 2011
+** Dont need any obs other than 2011
 
-** Bring in repeat tester data
-merge m:1 IIntID using "$derived/ac-HIV_Dates_RT_2011", keep(match) nogen 
-drop Method IntervalLength IntervalLengthCat 
+** Drop duplicates as same BS per 1+ episode in 2011
+duplicates drop IIntID BSIntID, force
+bysort IIntID  : gen Count = _N
+tab Count  //majority in 1 BSIntID 
 
-** Now merge point locations with BSIntId 
-merge m:1 BSIntID using "`Point'", nogen keep(match)
+** Bring in CVL, no match for BSIntId 17887
+merge m:1 BSIntID using "`Point'", keep(match) nogen keepusing(*geo_mean* *_prev_* is*)
 
+** lets rename these vars, too long
+rename pvl_prev_vlbaboveldlyesnoincneg ppvl
+rename pvl_prev_vlbaboveyesno_gauss199 ppvlg
+rename pvl_geo_mean_lnvlresultcopiesml pgm
+rename art_prev_vlbaboveldlyesnoincneg apvl
+rename art_geo_mean_lnvlresultcopiesml agm
+rename art_prev_vlaboveldlyesno2011    apvlg //??
+
+encode(isurbanorrural) if isurbanorrural != "DFT", gen(urban)
+
+** What about being in 1+ BSIntId in 2011? For now take max, and
+** associate BSIntID with max
+foreach var of varlist ppvl-apvlg {
+  bysort IIntID : egen _`var' = max(`var')
+  ** This identified BS of max value
+  qui bysort IIntID : egen BS`var' = max(cond(_`var' == `var', BSIntID, 0))
+  qui bysort IIntID : egen urb`var' = max(cond(_`var' == `var', urban, 0))
+  label values urb`var' urban
+  drop `var'
+  rename _`var' `var'
+}
+
+** Now drop the duplicate ID since we only have one val by year 2011
+duplicates drop IIntID, force 
+drop Count
+
+merge 1:m IIntID using "$derived/HIV_Episodes", keep(match)
+distinct IIntID if SeroConvertEvent==1
+distinct IIntID 
+
+***********************************************************************************************************
+****************************************  Get Age *********************************************************
+***********************************************************************************************************
 ** Bring in ages. RepeatTester datase has ages 16-55 for Males or 16-49 for females
 merge m:1 IIntID using "`Individuals'", keepusing(DateOfBirth) keep(match) nogen
-gen Age = round((ObservationStart-DateOfBirth)/365.25, 1)
-drop if Age < 12
+
+gen Age = round((date("01-01-2011", "DMY")-DateOfBirth)/365.25, 1)
+global ad = 12
+drop if Age < $ad
 
 ** Make Age Category 
-egen AgeGrp = cut(Age), at(12, 20(5)90, 110) label icode
+egen AgeGrp = cut(Age), at($ad, 20(5)90, 110) label icode
 ** Make this for AgeSex var
-egen AgeGrp1 = cut(Age), at(12, 20(5)45, 110) label icode
+egen AgeGrp1 = cut(Age), at($ad, 20(5)45, 110) label icode
 tab AgeGrp1
 
 ** Make new AgeSex Var

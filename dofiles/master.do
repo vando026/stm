@@ -10,6 +10,7 @@ version 12.1
 global root "C:\Users\\`c(username)'"
 global AC_Data "$root\Documents\AC_Data"
 global AC_Path "$dropbox/AfricaCentre/Projects/CommunityVL"
+global dofile "$AC_Path/dofiles"
 
 global source "$AC_Data\Source"
 global derived "$AC_Data\Derived/CommunityVL"
@@ -21,8 +22,12 @@ adopath+ "$AC_Path/dofiles/ado"
 ** Impute VL values for undetectable in ARTemis dataset to correspond with Pop VL method
 global VLImpute "Yes"
 
-** Keep Residents who have been in DSA for more than 50% of episodes
-global ResMore50 "Yes"
-
 ** Use random imputation for censored intervals
 global method "random"
+
+** Which end date to use: imputed date or earliestHIVpos
+global enddate "impute"
+
+
+** run dofiles
+do "$dofile/HIVSurveillance2011"

@@ -3,22 +3,13 @@
 //  project:	CVL
 //  author:     AV / Created: 03Feb2016 
 
+***********************************************************************************************************
+**************************************** Analysis *********************************************************
+***********************************************************************************************************
+use "$derived/cvl-analysis2", clear
+stset  ObservationEnd, failure(SeroConvertEvent==1) origin(ObservationStart) id(IIntID) scale(365.25)
 
-
-****************************************************************************
-***************Perform Analysis*********************************************
-****************************************************************************
-*****Residents Only
-** gen ExpYear1=ExpYear
-** replace ExpYear1=2004 if ExpYear<2004
-drop if pvl_quinn_index_gauss199_trim==0
-
-
-
-stset  NewObservationEnd if (BSIntID !=. &  ExpYear>2010), failure(BSEpisodeSeroConvert) origin(NewObservationStart) id(IIntID) scale(365.25)
-
-
-stptime, per (100)
+stptime, by(ExpYear) per (100)
 
 
 * Multivariable abalysis: final model
