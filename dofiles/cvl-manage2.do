@@ -17,33 +17,22 @@ duplicates drop IIntID, force
 tempfile Individuals
 save "`Individuals'"
 
-** You have to de-anonymize indiv and BS id
-use "$source/Demography/2015/RD02-01 ACDIS Demography", clear
-rename IIntId id_anonymised
-
-merge m:1 id_anonymised using "$source/Demography/2015/RD02-001 Demography Anonymised Individuals", ///
-  keep(match) nogen
-rename IIntId IIntID 
-
-
-
-use "$source/Demography/2015/DemographyYear", clear
-
-
 ***********************************************************************************************************
 **************************************** Demography *******************************************************
 ***********************************************************************************************************
-use "$source/Demography/DemographyYear", clear
-keep if ExpYear == 2011
-keep IIntID BSIntID Sex
-drop if missing(BSIntID)
+** Bring in linked Demography data
+use "$derived/Demography2015", clear
 
 ** Dont need any obs other than 2011
+keep if ExpYear == 2011
+
+keep IIntID BSIntID Sex
+drop if missing(BSIntID)
 
 ** Drop duplicates as same BS per 1+ episode in 2011
 duplicates drop IIntID BSIntID, force
 bysort IIntID  : gen Count = _N
-tab Count  //majority in 1 BSIntID 
+tab Count
 
 ** Bring in CVL, no match for BSIntId 17887
 merge m:1 BSIntID using "`Point'", keep(match) nogen keepusing(*geo_mean* *_prev_* is*)
@@ -58,22 +47,6 @@ rename art_prev_vlaboveldlyesno2011    apvlg //??
 rename hiv8_2011_prev_trim_1 HIV_prev
 
 encode(isurbanorrural) if isurbanorrural != "DFT", gen(urban)
-
-** What about being in 1+ BSIntId in 2011? For now take max, and
-** associate BSIntID with max
-foreach var of varlist ppvl-apvl {
-  bysort IIntID : egen _`var' = max(`var')
-  ** This identified BS of max value
-  qui bysort IIntID : egen BS`var' = max(cond(_`var' == `var', BSIntID, 0))
-  qui bysort IIntID : egen urb`var' = max(cond(_`var' == `var', urban, 0))
-  label values urb`var' urban
-  drop `var'
-  rename _`var' `var'
-}
-
-** Now drop the duplicate ID since we only have one val by year 2011
-duplicates drop IIntID, force 
-drop Count
 save "$derived/cvl-BS_dat", replace
 
 ***********************************************************************************************************
@@ -88,14 +61,13 @@ save "$derived/cvl-BS_dat", replace
 ***********************************************************************************************************
 ***********************************************************************************************************
 use "$derived/ac-HIV_Dates_2011", clear
-merge 1:1 IIntID using "$derived/cvl-BS_dat", keep(match)
+merge 1:m IIntID using "$derived/cvl-BS_dat", keep(match) nogen
 distinct IIntID 
-
 
 ****************************************  Get Age *********************************************************
 ***********************************************************************************************************
 ** Bring in ages. RepeatTester datase has ages 16-55 for Males or 16-49 for females
-merge m:1 IIntID using "`Individuals'", keepusing(DateOfBirth) keep(match) nogen
+merge m:1 IIntID using "`Individuals'" , keepusing(DateOfBirth) keep(match) nogen
 
 gen Age = round((date("01-01-2011", "DMY")-DateOfBirth)/365.25, 1)
 global ad = 12
