@@ -4,15 +4,7 @@
 //  author:     AV / Created: 13Apr2015 
 
 
-***********************************************************************************************************
-**************************************** De Anonymize Data ************************************************
-***********************************************************************************************************
-use "$source/HIVSurveillance/2015/RD05-99 ACDIS HIV All", clear 
-rename IIntId id_anonymised
-
-merge m:1 id_anonymised using "$source/HIVSurveillance/2015/RD05-001 HIV Anonymised Individuals", keep(match) nogen
-
-rename IIntId IIntID 
+use "$AC_Data/Derived/HIVSurveillance/2015/RD05-001_ACDIS_HIV", clear
 keep IIntID VisitDate HIVResult AgeAtVisit Sex
 
 ***********************************************************************************************************
@@ -113,6 +105,7 @@ if "$enddate"=="impute" {
   gen ImputePos = year(DateSeroConvert)
   bysort IIntID: egen AnyHIVPosImpPre_2011 = max(ImputePos < 2011)
   drop if AnyHIVPosImpPre_2011==1
+  drop AnyHIVPosImpPre_2011
   distinct IIntID if SeroConvertEvent == 1
 }
 else {

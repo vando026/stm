@@ -21,7 +21,7 @@ save "`Individuals'"
 **************************************** Demography *******************************************************
 ***********************************************************************************************************
 ** Bring in linked Demography data
-use "$derived/Demography2015", clear
+use "$AC_Data/Derived/Demography/RD02-002_Demography", clear
 
 ** Dont need any obs other than 2011
 keep if ExpYear == 2011
@@ -46,6 +46,10 @@ rename art_geo_mean_lnvlresultcopiesml agm
 rename art_prev_vlaboveldlyesno2011    apvlg //??
 rename hiv8_2011_prev_trim_1 HIV_prev
 
+foreach var of varlist ppvl-apvl {
+  sum `var'
+}
+
 encode(isurbanorrural) if isurbanorrural != "DFT", gen(urban)
 save "$derived/cvl-BS_dat", replace
 
@@ -61,11 +65,12 @@ save "$derived/cvl-BS_dat", replace
 ***********************************************************************************************************
 ***********************************************************************************************************
 use "$derived/ac-HIV_Dates_2011", clear
+gen LatestObservationDate = cond(SeroConvertEvent==1, DateSeroConvert, LatestHIVNegative)
+format LatestObservationDate %td
+
 merge 1:m IIntID using "$derived/cvl-BS_dat", keep(match) nogen
 distinct IIntID 
 
-****************************************  Get Age *********************************************************
-***********************************************************************************************************
 ** Bring in ages. RepeatTester datase has ages 16-55 for Males or 16-49 for females
 merge m:1 IIntID using "`Individuals'" , keepusing(DateOfBirth) keep(match) nogen
 
@@ -83,6 +88,19 @@ tab AgeGrp1
 gen SexLab = cond(Sex==2, "F", "M")
 generate AgeSex=SexLab + string(AgeGrp1)
 encode AgeSex, gen(AgeSexCat)
+
+** Recode vars for analysis
+gen logpgm = log(pgm)
+gen ppvl_pc = ppvl*100
+gen ppvlg_pc = ppvl*100
+
+gen logagm = log(agm)
+gen apvl_pc = apvl*100
+gen apvlg_pc = apvl*100
+
+** Cannot use i.var stata formate for stpm
+tab AgeSexCat, gen(AF)
+tab urban, gen(U)
 
 save "$derived/cvl-analysis2", replace
 

@@ -26,8 +26,9 @@ global VLImpute "Yes"
 global method "random"
 
 ** Which end date to use: imputed date or earliestHIVpos
-global enddate "impute"
+global enddate "earlyHIV"
 
 
 ** run dofiles
 do "$dofile/HIVSurveillance2011"
+do "$dofile/cvl-manage2"
