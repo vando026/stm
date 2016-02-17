@@ -16,7 +16,6 @@ ppvlg = pvl_prev_vlbaboveyesno_gauss199 */
 use "$derived/cvl-analysis2", clear
 stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) origin(EarliestHIVNegative) scale(365.25) exit(EndDate)
 
-if "$enddate"=="impute" {
 
   ** Do for CVL data
   stcox  logpgm 
@@ -34,7 +33,6 @@ if "$enddate"=="impute" {
   stcox  logagm HIV_prev i.urban i.AgeSexCat
   stcox  apvl_pc i.urban i.AgeSexCat
   stcox  apvlg_pc i.urban i.AgeSexCat
-}
 
 ***********************************************************************************************************
 **************************************** Interval Censoring ***********************************************

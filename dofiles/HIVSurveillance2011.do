@@ -101,19 +101,28 @@ assert (LatestHIVNegative < EarliestHIVPositive) if !missing(EarliestHIVPositive
 ***********************************************************************************************************
 **************************************** Impute dates or Not **********************************************
 ***********************************************************************************************************
+** In the next step we can select two methods to deal with interval censoring. The first imputes a 
+** random serodate between latestHIVneg and EarliestHIV pos, even if LatestHIVNegative is prior to 2011.
+** The Second method drops any LatestHIVNegative prior to 2011, since we will not randomly impute a serodate.
 gen SeroConvertEvent = !missing(EarliestHIVPositive)
 ** Now get a date for right censoring or event failure ** Which End date to use?
-global impute "yes"
 if "$impute"=="yes" {
   set seed 200
   ** To draw a random seroconversion date between latest HIV negative and Earliest HIV positive. 
   gen DateSeroConvert = int((EarliestHIVPositive - LatestHIVNegative)*runiform() + LatestHIVNegative) if SeroConvertEvent==1
+  format DateSeroConvert %td
   assert inrange(DateSeroConvert, LatestHIVNegative, EarliestHIVPositive) if SeroConvertEvent==1
   gen EndDate = cond(SeroConvertEvent==1, DateSeroConvert, LatestHIVNegative)
+  ** Now drop the obs if randomly selected prior to 2011
+  gen ImputePos = year(DateSeroConvert)
+  bysort IIntID: egen AnyHIVPosImpPre_2011 = max(ImputePos < 2011)
+  drop if AnyHIVPosImpPre_2011==1
+  drop AnyHIVPosImpPre_2011
   distinct IIntID if SeroConvertEvent == 1
-  format DateSeroConvert %td
 }
 else {
+  ** Now for interval censoring, we can only work LatestHIVNeg dates in 2011 and after
+  drop if year(LatestHIVNegative) < 2011
   gen EndDate = cond(!missing(EarliestHIVPositive), EarliestHIVPositive, LatestHIVNegative)
 }
 format EndDate Earliest* %td
