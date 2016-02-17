@@ -19,7 +19,14 @@ stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) origin(E
 if "$enddate"=="impute" {
 
   ** Do for CVL data
-  stcox  logpgm HIV_prev i.urban i.AgeSexCat
+  stcox  logpgm 
+  stcox  logpgm HIV_prev 
+  stcox  logpgm HIV_prev i.urban ib2.AgeSexCat
+
+ what proportion of positives are supperessed 
+
+ prev of 
+
   stcox  ppvl_pc i.urban i.AgeSexCat
   stcox  ppvlg_pc i.urban i.AgeSexCat
 
@@ -36,6 +43,7 @@ if "$enddate"=="impute" {
 if "$enddate"!="impute" {
 
   ** Gives estimates as log-hazard ratios
+  stpm  logpgm , left(_t0) df(1) scale(hazard)
   stpm  logpgm HIV_prev, left(_t0) df(1) scale(hazard)
   stpm  logpgm HIV_prev U2 U3 AF2-AF14 ,  left(_t0) df(1) scale(hazard)
   stpm  logpgm HIV_prev U2 U3 AF2-AF14 ,  left(_t0) df(1) scale(odds)

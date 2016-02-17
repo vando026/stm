@@ -60,27 +60,30 @@ tab HIVResult
 ** Now we want to see if there is any HIV negatives < 2012
 gen YearNeg = year(HIVNegative)
 gen YearPos = year(HIVPositive)
-bysort IIntID: egen AnyHIVNegPre_2012 = max(YearNeg < 2012)
-bysort IIntID: egen AnyHIVNegPost_2011 = max(inrange(YearNeg, 2012, 2015))
+bysort IIntID: egen AnyHIVNegPre_2011 = max(YearNeg < 2011)
+bysort IIntID: egen AnyHIVNegPost_2010 = max(inrange(YearNeg, 2011, 2015))
+bysort IIntID: egen AnyHIVNegIn_2011 = max(YearNeg==2011)
 bysort IIntID: egen AnyHIVPosPost_2010 = max(inrange(YearPos, 2011, 2015))
 bysort IIntID: egen AnyHIVPosPre_2011 = max(YearPos < 2011)
 
 ** Now identify Repeat tester if has two tests and one pre prior to 2010. 
-gen RepeatTester = (AnyHIVNegPre_2012 & AnyHIVNegPost_2011) | (AnyHIVNegPre_2012 & AnyHIVPosPost_2010)
+gen RepeatTester = (AnyHIVNegPre_2011 & AnyHIVNegPost_2010) 
+replace RepeatTester = (AnyHIVNegPost_2010 & AnyHIVPosPost_2010) if RepeatTester==0
+
 ** However, if this individual seroconverted prior to 2011 then exclude from analysis. EG IIntID=45344
 replace RepeatTester = 0 if AnyHIVPosPre_2011==1
+replace RepeatTester = 0 if AnyHIVNegPost_2010==0 & AnyHIVPosPost_2010 
 
 keep if RepeatTester==1
+drop if year(VisitDate) < 2011
 distinct IIntID 
-gen SeroConvertEvent = AnyHIVPosPost_2010
-distinct IIntID if SeroConvertEvent==1
 
 ***********************************************************************************************************
 **************************************** Censor Dates******************************************************
 ***********************************************************************************************************
+gen EarliestHIVNegative = date("01-01-2011", "DMY")
 bysort IIntID   : egen LatestHIVNegative = max(HIVNegative)
 bysort IIntID   : egen EarliestHIVPositive = min(HIVPositive)
-gen EarliestHIVNegative = date("01-01-2011", "DMY")
 format LatestHIVNegative EarliestHIV* %td
 duplicates drop IIntID, force
 keep IIntID Sex Earliest* Latest*
@@ -91,29 +94,26 @@ assert EarliestHIVNegative < EarliestHIVPositive if !missing(EarliestHIVPositive
 assert !missing(EarliestHIVPositive, LatestHIVNegative) if !missing(EarliestHIVPositive)
 assert (LatestHIVNegative < EarliestHIVPositive) if !missing(EarliestHIVPositive, LatestHIVNegative) 
 
-** To draw a random seroconversion date between latest HIV negative and Earliest HIV positive. 
+***********************************************************************************************************
+**************************************** Impute dates or Not **********************************************
+***********************************************************************************************************
 gen SeroConvertEvent = !missing(EarliestHIVPositive)
-set seed 200
-gen DateSeroConvert = (EarliestHIVPositive - LatestHIVNegative)*runiform() + LatestHIVNegative if SeroConvertEvent==1 
-replace DateSeroConvert = int(DateSeroConvert)  
-assert inrange(DateSeroConvert, LatestHIVNegative, EarliestHIVPositive) if SeroConvertEvent==1
-
-** Now get a date for right censoring or event failure ** Which End date to us?
-if "$enddate"=="impute" {
+** Now get a date for right censoring or event failure ** Which End date to use?
+global impute "yes"
+if "$impute"=="yes" {
+  set seed 200
+  ** To draw a random seroconversion date between latest HIV negative and Earliest HIV positive. 
+  gen DateSeroConvert = int((EarliestHIVPositive - LatestHIVNegative)*runiform() + LatestHIVNegative) if SeroConvertEvent==1
+  assert inrange(DateSeroConvert, LatestHIVNegative, EarliestHIVPositive) if SeroConvertEvent==1
   gen EndDate = cond(SeroConvertEvent==1, DateSeroConvert, LatestHIVNegative)
-  ** It is likely that random imputation may put enddate before 2011
-  gen ImputePos = year(DateSeroConvert)
-  bysort IIntID: egen AnyHIVPosImpPre_2011 = max(ImputePos < 2011)
-  drop if AnyHIVPosImpPre_2011==1
-  drop AnyHIVPosImpPre_2011
   distinct IIntID if SeroConvertEvent == 1
+  format DateSeroConvert %td
 }
 else {
-  gen EndDate = cond(SeroConvertEvent==1, EarliestHIVPositive, LatestHIVNegative)
+  gen EndDate = cond(!missing(EarliestHIVPositive), EarliestHIVPositive, LatestHIVNegative)
 }
+format EndDate Earliest* %td
 distinct IIntID if SeroConvertEvent == 1
-format DateSeroConvert EndDate Earliest* %td
-
 
 order IIntID
 save "$derived/ac-HIV_Dates_2011", replace

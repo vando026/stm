@@ -26,7 +26,7 @@ global VLImpute "Yes"
 global method "random"
 
 ** Which end date to use: imputed date or earliestHIVpos
-global enddate "earlyHIV"
+global impute "no"
 
 
 ** run dofiles

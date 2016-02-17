@@ -38,8 +38,8 @@ tab Count
 merge m:1 BSIntID using "`Point'", keep(match) nogen keepusing(*geo_mean* *_prev_* is*)
 
 ** lets rename these vars, too long
-rename pvl_prev_vlbaboveldlyesnoincneg ppvl
-rename pvl_prev_vlbaboveyesno_gauss199 ppvlg
+rename pvl_prev_vlbaboveldlyesnoincneg ppvl // population prev of detectable viremia. 
+rename pvl_prev_vlbaboveyesno_gauss199 ppvlg //proportion  of pos suppressed
 rename pvl_geo_mean_lnvlresultcopiesml pgm
 rename art_prev_vlbaboveldlyesnoincneg apvl
 rename art_geo_mean_lnvlresultcopiesml agm
@@ -65,8 +65,6 @@ save "$derived/cvl-BS_dat", replace
 ***********************************************************************************************************
 ***********************************************************************************************************
 use "$derived/ac-HIV_Dates_2011", clear
-gen LatestObservationDate = cond(SeroConvertEvent==1, DateSeroConvert, LatestHIVNegative)
-format LatestObservationDate %td
 
 merge 1:m IIntID using "$derived/cvl-BS_dat", keep(match) nogen
 distinct IIntID 
