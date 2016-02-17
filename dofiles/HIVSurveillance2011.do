@@ -57,34 +57,38 @@ merge m:1 IIntID using "`DropID'", keep(1 2) nogen
 sort IIntID VisitDate 
 tab HIVResult 
 
-** Now we want to see if there is any HIV negatives < 2012
+** Get years of tests
 gen YearNeg = year(HIVNegative)
 gen YearPos = year(HIVPositive)
-bysort IIntID: egen AnyHIVNegPre_2011 = max(YearNeg < 2011)
-bysort IIntID: egen AnyHIVNegPost_2010 = max(inrange(YearNeg, 2011, 2015))
-bysort IIntID: egen AnyHIVNegIn_2011 = max(YearNeg==2011)
-bysort IIntID: egen AnyHIVPosPost_2010 = max(inrange(YearPos, 2011, 2015))
-bysort IIntID: egen AnyHIVPosPre_2011 = max(YearPos < 2011)
+
+** We exclude any indiv who did not have a Neg test in 2011 and before
+bysort IIntID: egen HIVNegStart_2011 = max(YearNeg <= 2011)
+drop if HIVNegStart_2011==0 
+
+bysort IIntID: egen FirstPos = min(YearPos)
+drop if FirstPos < 2011
+drop FirstPos
+
+** Get HIV pos in 2011 and after
+bysort IIntID: egen HIVPos2011_End = max(inrange(YearPos, 2011, 2015))
+
+** Use to identify Negative repeat-testers
+bysort IIntID: egen HIVNeg2011_End = max(inrange(YearNeg, 2011, 2015))
 
 ** Now identify Repeat tester if has two tests and one pre prior to 2010. 
-gen RepeatTester = (AnyHIVNegPre_2011 & AnyHIVNegPost_2010) 
-replace RepeatTester = (AnyHIVNegPost_2010 & AnyHIVPosPost_2010) if RepeatTester==0
-
-** However, if this individual seroconverted prior to 2011 then exclude from analysis. EG IIntID=45344
-replace RepeatTester = 0 if AnyHIVPosPre_2011==1
-replace RepeatTester = 0 if AnyHIVNegPost_2010==0 & AnyHIVPosPost_2010 
+gen RepeatTester = (HIVNeg2011_End | HIVPos2011_End) 
 
 keep if RepeatTester==1
-drop if year(VisitDate) < 2011
 distinct IIntID 
 
 ***********************************************************************************************************
 **************************************** Censor Dates******************************************************
 ***********************************************************************************************************
-gen EarliestHIVNegative = date("01-01-2011", "DMY")
 bysort IIntID   : egen LatestHIVNegative = max(HIVNegative)
 bysort IIntID   : egen EarliestHIVPositive = min(HIVPositive)
+gen EarliestHIVNegative = date("01-01-2011", "DMY")
 format LatestHIVNegative EarliestHIV* %td
+
 duplicates drop IIntID, force
 keep IIntID Sex Earliest* Latest*
 
@@ -118,44 +122,3 @@ distinct IIntID if SeroConvertEvent == 1
 order IIntID
 save "$derived/ac-HIV_Dates_2011", replace
 
-***********************************************************************************************************
-****************************************Episodes data *****************************************************
-***********************************************************************************************************
-use "$derived/ac-HIV_Dates_2011", clear
-distinct IIntID 
-distinct IIntID if SeroConvertEvent 
-local RTcheck = r(ndistinct)
-
-gen ObservationEnd = EndDate
-gen ObservationStart = EarliestHIVNegative
-format Observation* %td
-assert ObservationStart < ObservationEnd 
-
-** To create the correct episodes we must stset first
-stset ObservationEnd, id(IIntID) failure(SeroConvertEvent==1) entry(ObservationStart) time0(ObservationStart) // scale(365.25) 
-
-** Show which days corrsepond to cut-off year
-forvalue yr = 2011/2015 {
-	local y = d(01jan`yr')
-	dis `yr' ":" `y'
-	}
-
-** Now split into episodes
-stsplit _Year, at(18628(365.25)20089)
-
-** Make sure first episode start begins with entry into surveillance
-gen ExpDays = ObservationEnd - ObservationStart 
-gen ExpYear = year(ObservationStart)
-
-stset, clear
-
-** Now expand the event var across all new episodes
-bysort IIntID : replace SeroConvertEvent = 0 if _n < _N
-
-distinct IIntID if SeroConvertEvent==1
-local Epicheck = r(ndistinct)
-assert `RTcheck'==`Epicheck'
-tab SeroConvertEvent
-
-drop _*
-save "$derived/HIV_Episodes", replace
