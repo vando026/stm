@@ -17,28 +17,26 @@ use "$derived/cvl-analysis2", clear
 stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) origin(EarliestHIVNegative) scale(365.25) exit(EndDate)
 
 
-  ** Do for CVL data
-  stcox  logpgm 
-  stcox  logpgm HIV_prev 
-  stcox  logpgm HIV_prev i.urban ib2.AgeSexCat
+** Do for CVL data
+stcox  pgm1000 
+stcox  i.pgm1000_cat i.HIV_pcat
+stcox  i.pgm1000_cat##i.HIV_pcat 
 
- what proportion of positives are supperessed 
+stcox  logpgm HIVpc i.urban ib2.AgeSexCat
 
- prev of 
+** what proportion of positives are supperessed 
+stcox  i.ppvl_pcat
+stcox  ppvl_pc i.urban i.AgeSexCat
+stcox  ppvlg_pc i.urban i.AgeSexCat
 
-  stcox  ppvl_pc i.urban i.AgeSexCat
-  stcox  ppvlg_pc i.urban i.AgeSexCat
-
-  ** Do for FVL data
-  stcox  logagm HIV_prev i.urban i.AgeSexCat
-  stcox  apvl_pc i.urban i.AgeSexCat
-  stcox  apvlg_pc i.urban i.AgeSexCat
+** Do for FVL data
+stcox  logagm HIV_prev i.urban ib2.AgeSexCat
+stcox  apvl_pc i.urban i.AgeSexCat
+stcox  apvlg_pc i.urban i.AgeSexCat
 
 ***********************************************************************************************************
 **************************************** Interval Censoring ***********************************************
 ***********************************************************************************************************
-** Try interval censoring
-if "$enddate"!="impute" {
 
   ** Gives estimates as log-hazard ratios
   stpm  logpgm , left(_t0) df(1) scale(hazard)
@@ -49,4 +47,3 @@ if "$enddate"!="impute" {
 
   stpm  ppvl_pc U2 U3 AF2-AF14 ,  left(_t0) df(1) scale(hazard)
   stpm  apvl_pc U2 U3 AF2-AF14 ,  left(_t0) df(1) scale(hazard)
-}

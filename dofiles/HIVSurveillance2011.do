@@ -65,6 +65,7 @@ gen YearPos = year(HIVPositive)
 bysort IIntID: egen HIVNegStart_2011 = max(YearNeg <= 2011)
 drop if HIVNegStart_2011==0 
 
+** If any positives prior to 2011 drop
 bysort IIntID: egen FirstPos = min(YearPos)
 drop if FirstPos < 2011
 drop FirstPos
@@ -107,8 +108,10 @@ assert (LatestHIVNegative < EarliestHIVPositive) if !missing(EarliestHIVPositive
 gen SeroConvertEvent = !missing(EarliestHIVPositive)
 ** Now get a date for right censoring or event failure ** Which End date to use?
 if "$impute"=="yes" {
-  set seed 200
+  ** Some LatestHIVNegative dates may be very early on, not reasonable to draw between long interval
+  drop if year(LatestHIVNegative) < 2008
   ** To draw a random seroconversion date between latest HIV negative and Earliest HIV positive. 
+  set seed 200
   gen DateSeroConvert = int((EarliestHIVPositive - LatestHIVNegative)*runiform() + LatestHIVNegative) if SeroConvertEvent==1
   format DateSeroConvert %td
   assert inrange(DateSeroConvert, LatestHIVNegative, EarliestHIVPositive) if SeroConvertEvent==1

@@ -54,13 +54,6 @@ encode(isurbanorrural) if isurbanorrural != "DFT", gen(urban)
 save "$derived/cvl-BS_dat", replace
 
 ***********************************************************************************************************
-***************************************** EPisodes HIV data ***********************************************
-***********************************************************************************************************
-** use "$derived/HIV_Episodes", clear 
-** merge m:1 IIntID using "$derived/cvl-BS_dat", keep(match)
-** distinct IIntID if SeroConvertEvent==1
-
-***********************************************************************************************************
 **************************************** Single Rec HIV data***********************************************
 ***********************************************************************************************************
 ***********************************************************************************************************
@@ -69,7 +62,7 @@ use "$derived/ac-HIV_Dates_2011", clear
 merge 1:m IIntID using "$derived/cvl-BS_dat", keep(match) nogen
 distinct IIntID 
 
-** Bring in ages. RepeatTester datase has ages 16-55 for Males or 16-49 for females
+** Bring in ages. 
 merge m:1 IIntID using "`Individuals'" , keepusing(DateOfBirth) keep(match) nogen
 
 gen Age = round((date("01-01-2011", "DMY")-DateOfBirth)/365.25, 1)
@@ -88,9 +81,27 @@ generate AgeSex=SexLab + string(AgeGrp1)
 encode AgeSex, gen(AgeSexCat)
 
 ** Recode vars for analysis
-gen logpgm = log(pgm)
 gen ppvl_pc = ppvl*100
+sum ppvl_pc
+egen ppvl_pcat = cut(ppvl_pc), at(0, 10, 15, 20, 110) icode label
+tab ppvl_pcat
+
 gen ppvlg_pc = ppvl*100
+
+gen logpgm = log(pgm)
+replace pgm = 17000 if pgm > 17000
+gen pgm1000 = pgm/1000
+egen pgm1000_cat = cut(pgm1000), at(0, 5, 10,  17)
+tab pgm1000_cat
+sum pgm1000
+** hist pgm1000
+
+gen HIVpc = HIV_prev * 100
+hist HIVpc
+
+capture drop HIV_pcat
+egen HIV_pcat = cut(HIVpc), at(0, 15, 20, 25, 100) icode label
+tab HIV_pcat
 
 gen logagm = log(agm)
 gen apvl_pc = apvl*100
