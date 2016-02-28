@@ -6,7 +6,7 @@
 ** log using "$output/analysis.txt", text replace
 
 /** legend:
-gm = pvl_geo_mean_lnvlresultcopiesml
+pgm = pvl_geo_mean_lnvlresultcopiesml
 ppvl = pvl_prev_vlbaboveldlyesnoincneg
 ppvlg = pvl_prev_vlbaboveyesno_gauss199 */
 

@@ -73,7 +73,7 @@ rename iintid IIntID
 rename datereceivedatacvl TestDate
 gen TestYear = year(TestDate)
 
-** Get Sex 
+** Get Sex and other  vars
 merge m:1 IIntID using "`Demo'", keep(match) nogen keepusing(Sex)
 merge m:1 IIntID using "`Individuals'", keep(match) nogen
 
