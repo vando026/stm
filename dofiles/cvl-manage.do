@@ -18,6 +18,17 @@ distinct IIntID
 tempfile Demo
 sav "`Demo'"
 
+use "$source/ARTemis/ARTemisAll2013A", clear 
+rename IIntId IIntID
+keep IIntID Sex DateOfInitiation
+drop if missing(DateOfInitiation)
+format DateOfInitiation %td
+rename Sex Sex_Artemis
+duplicates list IIntID
+tempfile ARTDate
+save "`ARTDate'" 
+
+
 ***********************************************************************************************************
 **************************************** Facility VL ******************************************************
 ***********************************************************************************************************
@@ -76,6 +87,7 @@ gen TestYear = year(TestDate)
 ** Get Sex and other  vars
 merge m:1 IIntID using "`Demo'", keep(match) nogen keepusing(Sex)
 merge m:1 IIntID using "`Individuals'", keep(match) nogen
+merge m:1 IIntID using "`ARTDate'" , keep(1 3) nogen 
 
 gen AgeYr = int((TestDate - DateOfBirth)/365.25) 
 egen Age = cut(AgeYr), at(15, 20, 25, 35, 45, 55, 100) icode label
@@ -86,9 +98,23 @@ replace vlresultcopiesml =RandomUndetectable if  vlbelowldl =="Yes"
 rename vlresultcopiesml ViralLoad
 drop if missing(ViralLoad)
 
-keep IIntID Sex TestDate TestYear ViralLoad Age
+keep IIntID Sex TestDate TestYear ViralLoad Age DateOfInitiation
 
 save "$derived/CVL2011", replace
+
+***********************************************************************************************************
+***********************************************************************************************************
+***********************************************************************************************************
+** summary for frank
+use "$derived/CVL2011", clear
+
+distinct IIntID 
+
+gen OnART2011 = (year(DateOfInitiation) < 2012)
+tab OnART2011
+
+gen VLsuppress = (ViralLoad < 1500)
+tab VLsuppress
 
 /*
 use "$source/Demography/DemographyYear", clear
