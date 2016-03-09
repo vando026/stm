@@ -17,6 +17,13 @@ duplicates drop IIntID, force
 tempfile Individuals
 save "`Individuals'"
 
+use "$source/CommunityVL/ART Coverage and HIV prevalence by BS_final", clear
+keep BSIntID X_2011artcoverage_1
+rename X_2011artcoverage_1 ARTCov2011
+tempfile ARTCov
+save "`ARTCov'" 
+
+
 ***********************************************************************************************************
 **************************************** Demography *******************************************************
 ***********************************************************************************************************
@@ -36,6 +43,11 @@ tab Count
 
 ** Bring in CVL, no match for BSIntId 17887
 merge m:1 BSIntID using "`Point'", keep(match) nogen keepusing(*geo_mean* *_prev_* is*)
+
+** Bring in ART cov
+merge m:1 BSIntID using "`ARTCov'", keep(1 3) nogen
+** replace ARTCov2011 = runiform() if missing(ARTCov2011)
+drop if missing(ARTCov2011)
 
 ** lets rename these vars, too long
 rename pvl_prev_vlbaboveldlyesnoincneg ppvl // population prev of detectable viremia. 
@@ -59,6 +71,7 @@ save "$derived/cvl-BS_dat", replace
 ***********************************************************************************************************
 use "$derived/ac-HIV_Dates_2011", clear
 
+** Bring in CVL data
 merge 1:m IIntID using "$derived/cvl-BS_dat", keep(match) nogen
 distinct IIntID 
 
@@ -92,7 +105,9 @@ gen logpgm = log(pgm)
 replace pgm = 17000 if pgm > 17000
 gen pgm1000 = pgm/1000
 egen pgm1000_cat = cut(pgm1000), at(0, 5, 10,  17)
-tab pgm1000_cat
+capture drop pgm_cat
+egen pgm_cat = cut(pgm), at(0, 5000, 10000,  18000) icode
+tab1 pgm1000_cat pgm_cat
 sum pgm1000
 ** hist pgm1000
 
