@@ -11,9 +11,10 @@
 use "$derived/FVL2011", clear 
 gen Over50k = cond(ViralLoad>=50000, 1, 0)
 
-global methods "mean median gmean"
+** global methods "mean median gmean"
+global methods "mean median"
 foreach m of global methods {
-  plotVL ViralLoad, data(FVL) year(2011) method(`m')
+  plotVL log10VL, data(FVL) year(2011) method(`m')
 }
 ** plotVL Over50k, data(FVL) year(2011) prop 
 

@@ -58,15 +58,15 @@ keep if inlist(TestYear, 2011)
 keep if inrange(AgeTested, 15, 65)
 egen Age = cut(AgeTested), at(15, 20, 25, 35, 45, 55, 100) icode label
 
+gen log10VL = log10(ViralLoad) 
+
 drop ACDIS_IIntID 
-keep IIntID Sex TestDate TestYear ViralLoad Age
+keep IIntID Sex TestDate TestYear ViralLoad Age log10VL
 
 ** Save datasets 
-preserve
 keep if TestYear==2011 
 distinct IIntID 
 save "$derived/FVL2011", replace
-restore
 
 ***********************************************************************************************************
 ********************************************* Community VL ************************************************
@@ -98,7 +98,9 @@ replace vlresultcopiesml =RandomUndetectable if  vlbelowldl =="Yes"
 rename vlresultcopiesml ViralLoad
 drop if missing(ViralLoad)
 
-keep IIntID Sex TestDate TestYear ViralLoad Age DateOfInitiation
+gen log10VL = log10(ViralLoad)
+
+keep IIntID Sex TestDate TestYear ViralLoad Age DateOfInitiation log10VL
 
 save "$derived/CVL2011", replace
 

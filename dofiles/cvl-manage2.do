@@ -28,7 +28,7 @@ sum ppvl_pc
 egen ppvl_pcat = cut(ppvl_pc), at(0, 10, 15, 20, 110) icode label
 tab ppvl_pcat
 
-gen ppvlg_pc = ppvl*100
+gen ppvlg_pc = ppvlg*100
 
 replace pgm = 17000 if pgm > 17000
 gen pgm1000 = pgm/1000
@@ -41,7 +41,7 @@ sum pgm1000
 gen HIVpc = HIV_prev * 100
 
 capture drop HIV_pcat
-egen HIV_pcat = cut(HIVpc), at(0, 15, 25, 35, 100) icode label
+egen HIV_pcat = cut(HIVpc), at(0, 12.5, 25, 100) icode label
 tab HIV_pcat
 
 tempfile Point
@@ -120,6 +120,7 @@ egen AgeGrp1 = cut(Age), at($ad, 20(5)45, 110) label icode
 tab AgeGrp1
 
 ** Make new AgeSex Var
+gen Female = (Sex==2)
 gen SexLab = cond(Sex==2, "F", "M")
 generate AgeSex=SexLab + string(AgeGrp1)
 encode AgeSex, gen(AgeSexCat)
