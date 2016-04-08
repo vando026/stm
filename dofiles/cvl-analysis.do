@@ -39,19 +39,13 @@ foreach dat in gmn mn med 50 {
 }
 
 
-use "$derived/All2011Female_gmn", clear
+plotVL "$derived/All2011Female_gmn", name(Female_gmn)
+plotVL "$derived/All2011Male_gmn", name(Male_gmn)
 
 
-global mcol1 "green"
-global mcol2 "red"
-global lopts "lwidth(medium)"
-twoway  ///
-  (scatter mean Age if Data==1, mcolor("maroon") ) ///
-  (scatter mean Age if Data==2, mcolor("navy")) ///
-  (rcap lb ub Age if Data==1, lcolor("maroon") $lopts) ///
-  (rcap lb ub Age if Data==2, lcolor("navy") $lopts), ///
-  ytitle("") xtitle("") ylabel(#4) xlabel(#7, val) legend(on) 
-  
+graph combine Male_gmn
+
+
   
 
   title("`VLname': `sex'") ///
