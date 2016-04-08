@@ -6,26 +6,59 @@
 ** The plan is to produce graphs for CVL and FVL by year 2011 and gender
 
 ***********************************************************************************************************
-**************************************** Analyze **********************************************************
+**************************************** Generate the Estimates *******************************************
 ***********************************************************************************************************
-use "$derived/FVL2011", clear 
-gen Over50k = cond(ViralLoad>=50000, 1, 0)
-
-** global methods "mean median gmean"
-global methods "mean median"
-foreach m of global methods {
-  plotVL log10VL, data(FVL) year(2011) method(`m')
-}
-** plotVL Over50k, data(FVL) year(2011) prop 
-
-use "$derived/CVL2011", clear 
-gen Over50k = cond(ViralLoad>=50000, 1, 0)
-foreach m of global methods {
-  plotVL ViralLoad, data(CVL) year(2011) method(`m') comp
+** Get summary stats for tables
+foreach dat in FVL CVL {
+  use "$derived/`dat'2011", clear 
+  tab Sex
+  tab Age
+  sum ViralLoad, d
+  ameans ViralLoad
+  gen VLSuppr = (ViralLoad<1550) 
+  tab VLSuppr 
 }
 
-** plotVL Over50k, data(CVL) year(2011) comp prop
+** Now get summary estimates by age and sex
+foreach dat in FVL CVL {
+  use "$derived/`dat'2011", clear 
+  cvlData ViralLoad Over50k, data(`dat') year(2011) 
+}
 
+***********************************************************************************************************
+**************************************** Merge Estimates **************************************************
+***********************************************************************************************************
+foreach dat in gmn mn med 50 {
+  foreach Sex in Male Female {
+  use "$derived/CVL2011`Sex'_`dat'", clear
+  label define LblData 1 "FVL" 2 "CVL", replace
+  append using "$derived/FVL2011`Sex'_`dat'"
+  label values Data LblData
+  sav "$derived/All2011`Sex'_`dat'", replace
+  }
+}
+
+
+use "$derived/All2011Female_gmn", clear
+
+
+global mcol1 "green"
+global mcol2 "red"
+global lopts "lwidth(medium)"
+twoway  ///
+  (scatter mean Age if Data==1, mcolor("maroon") ) ///
+  (scatter mean Age if Data==2, mcolor("navy")) ///
+  (rcap lb ub Age if Data==1, lcolor("maroon") $lopts) ///
+  (rcap lb ub Age if Data==2, lcolor("navy") $lopts), ///
+  ytitle("") xtitle("") ylabel(#4) xlabel(#7, val) legend(on) 
+  
+  
+
+  title("`VLname': `sex'") ///
+  name("`gname'", replace) note(`gnote')
+
+statsby mean=r(mean_g) lb=r(lb_g) ub=r(ub_g) Data=1, by(Age) saving("$derived/test", replace): /// 
+      ameans ViralLoad if TestYear==2011 & Sex==1
 
 /*
 statsby mean50k=r(mean) sd50k=r(sd), ///
