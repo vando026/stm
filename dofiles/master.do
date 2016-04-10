@@ -5,7 +5,7 @@
 
 clear all
 version 12.1
-capture ssc install ciplot
+** capture ssc install ciplot
 
 global AC_Path "$dropbox/AfricaCentre/Projects/CommunityVL"
 global dofile "$AC_Path/dofiles"

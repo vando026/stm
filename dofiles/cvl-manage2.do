@@ -6,7 +6,7 @@
 ***********************************************************************************************************
 **************************************** Bring in Datasets*************************************************
 ***********************************************************************************************************
-insheet using "$source/CommunityVL/RegisteredPointLocationsMI_CVL+ARTEMIS.csv", clear
+insheet using "$source/RegisteredPointLocationsMI_CVL+ARTEMIS.csv", clear
 rename bsintid BSIntID
 
 ** lets rename these vars, too long
@@ -55,20 +55,20 @@ tab HIV_pcat
 tempfile Point
 save "`Point'"
 
-use "$derived/Individuals/2015/RD01-01_ACDIS_Individuals", clear
+use "$source/RD01-01_ACDIS_Individuals", clear
 keep IIntID DateOfBirth 
 duplicates drop IIntID, force
 tempfile Individuals
 save "`Individuals'"
 
-use "$source/CommunityVL/ART Coverage and HIV prevalence by BS_final_v12", clear
+use "$source/ART Coverage and HIV prevalence by BS_final_v12", clear
 keep BSIntID X_2011artcoverage_1
 rename X_2011artcoverage_1 ARTCov2011
 gen ARTCov2011_10 = ARTCov2011*10
 tempfile ARTCov
 save "`ARTCov'" 
 
-insheet using "$source/CommunityVL/logvl.csv", clear 
+insheet using "$source/logvl.csv", clear 
 rename bsintid BSIntID
 rename mean_log* mnLogVL 
 
@@ -82,7 +82,7 @@ save "`BS_CVL'"
 **************************************** Demography *******************************************************
 ***********************************************************************************************************
 ** Bring in linked Demography data
-use "$AC_Data/Derived/Demography/RD02-002_Demography", clear
+use "$source/RD02-002_Demography", clear
 
 ** Dont need any obs other than 2011
 keep if ExpYear == 2011
@@ -112,16 +112,17 @@ merge m:1 BSIntID using "`BS_CVL'", keep(match) nogen
 
 encode(isurbanorrural) if isurbanorrural != "DFT", gen(urban)
 drop isurbanorrural
-save "$derived/CommunityVL/cvl-BS_dat", replace
+tempfile BS_dat
+save "`BS_dat'" 
 
 ***********************************************************************************************************
 **************************************** Single Rec HIV data***********************************************
 ***********************************************************************************************************
 ***********************************************************************************************************
-use "$derived/CommunityVL/ac-HIV_Dates_2011", clear
+use "$derived/ac-HIV_Dates_2011", clear
 
 ** Bring in CVL data
-merge 1:m IIntID using "$derived/CommunityVL/cvl-BS_dat", keep(match) nogen
+merge 1:m IIntID using "`BS_dat'", keep(match) nogen
 distinct IIntID 
 
 ** Bring in ages. 
@@ -147,5 +148,5 @@ encode AgeSex, gen(AgeSexCat)
 tab AgeSexCat, gen(AF)
 tab urban, gen(U)
 
-save "$derived/CommunityVL/cvl-analysis2", replace
+save "$derived/cvl-analysis2", replace
 

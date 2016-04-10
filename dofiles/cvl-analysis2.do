@@ -12,8 +12,7 @@ ppvlg = pvl_prev_vlbaboveyesno_gauss199 */
 **************************************** Single Rec Data **************************************************
 ***********************************************************************************************************
 ** log using "$output/FrankCompare.txt", text replace
-
-use "$derived/CommunityVL/cvl-analysis2", clear
+use "$derived/cvl-analysis2", clear
 stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
   origin(EarliestHIVNegative) scale(365.25) exit(EndDate)
 
