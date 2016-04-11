@@ -5,8 +5,17 @@
 
 clear all
 version 12.1
+
+***********************************************************************************************************
+**************************************** INstall packages *************************************************
+***********************************************************************************************************
+** Uncomment below if not downloaded already
 ** capture ssc install ciplot
 
+***********************************************************************************************************
+**************************************** Set paths ********************************************************
+***********************************************************************************************************
+** Frank, you only need to change the AC_Path for everything to work (so long as you maintain my file hierachy)
 global AC_Path "$dropbox/AfricaCentre/Projects/CommunityVL"
 global dofile "$AC_Path/dofiles"
 
@@ -14,14 +23,11 @@ global source "$AC_Path/source"
 global derived "$AC_Path/derived"
 global output "$AC_Path/output"
 
+** This reads my personal ado files created for this project
 adopath+ "$AC_Path/dofiles/ado"
-
 
 ** Impute VL values for undetectable in ARTemis dataset to correspond with Pop VL method
 global VLImpute "Yes"
-
-** Use random imputation for censored intervals
-global method "random"
 
 ***********************************************************************************************************
 **************************************** Run do files *****************************************************

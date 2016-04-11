@@ -67,7 +67,10 @@ keep IIntID Sex TestDate TestYear ViralLoad Age log10VL Over50k
 ** Save datasets 
 keep if TestYear==2011 
 distinct IIntID 
-saveold "$derived/FVL2011", replace
+gen Data = "FVL"
+
+tempfile FVLdat
+save "`FVLdat'" 
 
 ***********************************************************************************************************
 ********************************************* Community VL ************************************************
@@ -103,6 +106,16 @@ gen log10VL = log10(ViralLoad)
 gen Over50k = cond(ViralLoad>=50000, 1, 0)
 
 keep IIntID Sex TestDate TestYear ViralLoad Age DateOfInitiation log10VL Over50k
+gen Data = "CVL"
 
-saveold "$derived/CVL2011", replace
+tempfile CVLdat
+save "`CVLdat'" 
 
+***********************************************************************************************************
+**************************************** Merge CVL and FVL data *******************************************
+***********************************************************************************************************
+use "`FVLdat'"
+append using "`CVLdat'"
+gen Female = (Sex==2)
+drop Sex
+saveold "$derived/PVL2011", replace

@@ -148,5 +148,5 @@ encode AgeSex, gen(AgeSexCat)
 tab AgeSexCat, gen(AF)
 tab urban, gen(U)
 
-save "$derived/cvl-analysis2", replace
+saveold "$derived/cvl-analysis2", replace
 
