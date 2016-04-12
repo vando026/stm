@@ -17,45 +17,51 @@ use "$derived/cvl-analysis2", clear
 stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
   origin(EarliestHIVNegative) scale(365.25) exit(EndDate)
 
+** Set covariates here once, so you dont have to do it x times for x models
+global prev "i.HIV_pcat"
+global vars "$prev Female i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
+
 ***********************************************************************************************************
 **************************************** Model 1 **********************************************************
 ***********************************************************************************************************
 ** population viral load--geometric mean, for a 1000 copies/ml increase
 eststo pgm1: stcox pgm1000 , noshow
-eststo pgm2: stcox pgm1000 i.HIV_pcat , noshow
-eststo pgm3: stcox pgm1000 i.HIV_pcat Female i.AgeGrp1 , noshow
+eststo pgm2: stcox pgm1000 $prev, noshow
+eststo pgm3: stcox pgm1000 $vars, noshow
 
 ***********************************************************************************************************
 **************************************** Model 2***********************************************************
 ***********************************************************************************************************
 ** population prevalence of detectable viremia for a 1 percent increase
 eststo ppvl1: stcox ppvl_pc , noshow
-eststo ppvl2: stcox ppvl_pc i.HIV_pcat , noshow
-eststo ppvl3: stcox ppvl_pc i.HIV_pcat Female i.AgeGrp1 , noshow
+eststo ppvl2: stcox ppvl_pc $prev , noshow
+eststo ppvl3: stcox ppvl_pc $vars, noshow
 
 ***********************************************************************************************************
 **************************************** Model 3***********************************************************
 ***********************************************************************************************************
 ** facility-based prevalence of detectable viremia 
 eststo apvl1: stcox apvl_pc , noshow
-eststo apvl2: stcox apvl_pc i.HIV_pcat , noshow
-eststo apvl3: stcox apvl_pc i.HIV_pcat Female i.AgeGrp1 , noshow
+eststo apvl2: stcox apvl_pc $prev , noshow
+eststo apvl3: stcox apvl_pc $vars, noshow
 
 ***********************************************************************************************************
 **************************************** Model 4***********************************************************
 ***********************************************************************************************************
 ** facility-based geometric mean
 eststo agm1: stcox agm1000 , noshow
-eststo agm2: stcox agm1000 i.HIV_pcat , noshow
-eststo agm3: stcox agm1000 i.HIV_pcat Female i.AgeGrp1 , noshow
+eststo agm2: stcox agm1000 $prev , noshow
+eststo agm3: stcox agm1000 $vars, noshow
 
 ***********************************************************************************************************
 **************************************** Combined *********************************************************
 ***********************************************************************************************************
-global labels "coeflabel(0b.HIV_pcat "HIV prev. (0-14%)" 1.HIV_pcat "HIV prev. (15-24%)" 2.HIV_pcat "HIV prev. (25+%)" 0b.AgeGrp1 "Age 12-19" 1.AgeGrp1 "20-24" 2.AgeGrp1 "25-29" 3.AgeGrp1 "30-34" 4.AgeGrp1 "35-39" 5.AgeGrp1 "40-44" 6.AgeGrp1 "45+")"
-global opts "cells(b ci p) rtf compress eform nomtitles varwidth(20) nogaps"
+global opts1 "cells("b(fmt(%9.3f)) ci(par(( - ))) p") substitute(0.000 "<0.001") rtf compress"
+global opts2 "eform varwidth(12) modelwidth(6 13 6) nonumbers nogaps replace"
+global opts3 "mlabels(PVL PPDV FVL FPDV)"
+global names "rename(pgm1000 cvl ppvl_pc cvl agm1000 cvl apvl_pc cvl)"
 
-esttab pgm3 ppvl3 agm3 apvl3 using "$output/Model2.rtf", append $opts //$labels $title
+esttab pgm3 ppvl3 agm3 apvl3 using "$output/Model2.rtf", $opts1 $opts2 $opts3 $names
 
 
 ***********************************************************************************************************
@@ -78,3 +84,16 @@ global ppvl3_ll =  e(ll)
 dis -2*$ppvl3_ll + 2*(5 + 1)
 ** Psuedo R squared
 dis "`e(r2_p)'"
+
+
+***********************************************************************************************************
+**************************************** Table 2 incidence ************************************************
+***********************************************************************************************************
+use "$derived/cvl-analysis2", clear 
+stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
+  origin(EarliestHIVNegative) scale(365.25) exit(EndDate) id(IIntID)
+
+foreach var of varlist HIV_pcat Female AgeGrp1 urban Marital PartnerCat AIQ {
+  stptime , by(`var') per(100) dd(2)
+}
+

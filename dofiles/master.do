@@ -7,12 +7,6 @@ clear all
 version 12.1
 
 ***********************************************************************************************************
-**************************************** INstall packages *************************************************
-***********************************************************************************************************
-** Uncomment below if not downloaded already
-** capture ssc install ciplot
-
-***********************************************************************************************************
 **************************************** Set paths ********************************************************
 ***********************************************************************************************************
 ** Frank, you only need to change the AC_Path for everything to work (so long as you maintain my file hierachy)
@@ -45,6 +39,9 @@ do "$dofile/cvl-analysis"
 
 ** This dofile prepares the data for Cox analysis
 do "$dofile/cvl-manage2"
+
+** This dofile brings in HSE data, marital status and partners in 12 months
+do "$dofile/cvl-manage3"
 
 ** This dofile does Cox models
 do "$dofile/cvl-analysis2"

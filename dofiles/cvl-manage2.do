@@ -144,9 +144,5 @@ gen SexLab = cond(Sex==2, "F", "M")
 generate AgeSex=SexLab + string(AgeGrp1)
 encode AgeSex, gen(AgeSexCat)
 
-** Cannot use i.var stata formate for stpm
-tab AgeSexCat, gen(AF)
-tab urban, gen(U)
-
-saveold "$derived/cvl-analysis2", replace
+saveold "$derived/cvl-main2", replace
 
