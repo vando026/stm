@@ -27,4 +27,16 @@ statsby mean=r(p50) lb=r(p25) ub=r(p75), by(Data Female Age) saving("$derived/me
 statsby mean=r(mean) lb=r(lb) ub=r(ub), by(Data Female Age) saving("$derived/over50_2011", replace): /// 
   ci Over50k 
 
+foreach dat in gmean2011 mean2011 med2011 over50_2011 {
+  use "$derived/`dat'", clear
+  saveold "$derived/`dat'", replace
+}
+
+plotVL  "$derived/gmean2011" if Female==1, name(Fem) title(Females)
+plotVL  "$derived/gmean2011" if Female==0, name(Mal) title(Males)
+
+
+
+
+
 ** PLot in R

@@ -38,6 +38,7 @@ tab ppvlg_pcat
 replace pgm = 17000 if pgm > 17000
 gen pgm1000 = pgm/1000
 gen agm1000 = agm/1000
+gen agm100 = agm/100
 egen pgm1000_cat = cut(pgm1000), at(0, 5, 10,  17)
 tab pgm1000_cat 
 
