@@ -8,11 +8,11 @@
 ***********************************************************************************************************
 ** Get IIntIDs from Demograpy dataset 2014
 use "$source/RD02-002_Demography", clear
+keep BSIntID IIntID ACDIS_IIntID Sex 
 
 ** Get relevant IDs and vars
 duplicates drop IIntID, force
 clonevar ACDIS_IIntID = IIntID 
-keep IIntID ACDIS_IIntID Sex 
 distinct IIntID 
 
 tempfile Demo
@@ -36,6 +36,7 @@ save "`ARTDate'"
 use "`Demo'", clear
 
 merge 1:m ACDIS_IIntID using "$source/LabResults" , keep(match) nogen keepusing(TestDate LabTestCode RESULT AgeTested) 
+merge m:1 IIntID using "`ARTDate'" , keep(1 3) nogen 
 distinct ACDIS_IIntID 
 
 ** Keep only viral loads
@@ -51,6 +52,8 @@ if "$VLImpute"=="Yes" {
 } 
 
 ** Keep specific years
+bysort IIntID: egen DateOfInitiationMin = min(DateOfInitiation)
+format DateOfInitiationMin %td
 gen TestYear = year(TestDate)
 keep if inlist(TestYear, 2011)
 
@@ -62,7 +65,8 @@ gen log10VL = log10(ViralLoad)
 gen Over50k = cond(ViralLoad>=50000, 1, 0)
 
 drop ACDIS_IIntID 
-keep IIntID Sex TestDate TestYear ViralLoad Age log10VL Over50k
+keep IIntID Sex TestDate TestYear ViralLoad Age log10VL Over50k DateOfInitiationMin
+rename DateOfInitiationMin DateOfInitiation
 
 ** Save datasets 
 keep if TestYear==2011 
@@ -114,8 +118,16 @@ save "`CVLdat'"
 ***********************************************************************************************************
 **************************************** Merge CVL and FVL data *******************************************
 ***********************************************************************************************************
-use "`FVLdat'"
+use "`FVLdat'", clear
 append using "`CVLdat'"
 gen Female = (Sex==2)
 drop Sex
+gen OnART = (DateOfInitiation < date("2011-07-01", "YMD"))
 saveold "$derived/PVL2011", replace
+
+
+** Bring in BSIntID 
+use "$source/RD02-002_Demography", clear
+keep if ExpYear==2011
+keep IIntID BSIntID  ExpYear
+merge m:1 IIntID using "$derived/PVL2011"

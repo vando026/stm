@@ -97,3 +97,4 @@ foreach var of varlist HIV_pcat Female AgeGrp1 urban Marital PartnerCat AIQ {
   stptime , by(`var') per(100) dd(2)
 }
 
+

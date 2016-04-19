@@ -13,6 +13,12 @@ bysort Data: sum ViralLoad, d
 bysort Data: ameans ViralLoad
 bysort Data: gen VLSuppr = (ViralLoad<1550) 
 bysort Data: tab VLSuppr 
+bysort Data: tab OnART 
+bysort Data: tab Age Female
+
+
+** Look at indiv only on ART
+** drop if OnART == 1 
 
 ** Comute geometric mean
 statsby mean=r(mean_g) lb=r(lb_g) ub=r(ub_g), by(Data Female Age) saving("$derived/gmean2011", replace): /// 
@@ -29,11 +35,12 @@ statsby mean=r(mean) lb=r(lb) ub=r(ub), by(Data Female Age) saving("$derived/ove
 
 foreach dat in gmean2011 mean2011 med2011 over50_2011 {
   use "$derived/`dat'", clear
+  replace lb = 0 if lb < 0
   saveold "$derived/`dat'", replace
 }
 
-plotVL  "$derived/gmean2011" if Female==1, name(Fem) title(Females)
-plotVL  "$derived/gmean2011" if Female==0, name(Mal) title(Males)
+** plotVL  "$derived/gmean2011NoART" if Female==1, name(Fem) title(Females)
+** plotVL  "$derived/gmean2011" if Female==0, name(Mal) title(Males)
 
 
 
