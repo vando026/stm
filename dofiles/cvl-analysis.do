@@ -40,10 +40,11 @@ foreach dat in gmean2011 mean2011 med2011 over50_2011 {
 }
 
 ** plotVL  "$derived/gmean2011NoART" if Female==1, name(Fem) title(Females)
-** plotVL  "$derived/gmean2011" if Female==0, name(Mal) title(Males)
+plotVL  "$derived/gmean2011" if Female==0, name(Mal) title(Males)
 
-
-
+use "$derived/gmean2011" , clear
+keep if Female==1 
+twoway (rarea lb ub Age, sort)
 
 
 ** PLot in R

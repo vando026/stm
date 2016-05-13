@@ -20,11 +20,13 @@ twoway  ///
   name(gr1, replace) legend(off)
 
 bysort Age (Data): gen byCount = _n
-reshape wide mean lb ub Data, i(Age) j(byCount)
+reshape wide mean lb ub Data Female, i(Age) j(byCount)
 gen Ratio = mean1/mean2
+gen Rlb = lb1/lb2
+gen Rub = ub1/ub2
 ** reshape long
 
-twoway (line Ratio Age, xtitle("Age") xlabel(#7, val) ///
+twoway (rarea Rlb Rub Age, sort xtitle("Age") xlabel(#7, val) ///
   ytitle("Ratio of Community to Facility VL")), ///
   name(gr2, replace) legend(off)
 

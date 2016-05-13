@@ -19,22 +19,22 @@ stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
 
 ** Set covariates here once, so you dont have to do it x times for x models
 global prev "i.HIV_pcat"
-global vars "$prev Female i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
+global vars "Female i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
 
 ***********************************************************************************************************
 **************************************** Model 1 **********************************************************
 ***********************************************************************************************************
 ** population viral load--geometric mean, for a 1000 copies/ml increase
 eststo pgm1: stcox pgm1000 , noshow
-eststo pgm2: stcox pgm1000 $prev, noshow
-eststo pgm3: stcox pgm1000 $vars, noshow
+eststo pgm2: stcox pgm1000 i.HIV_pcat, noshow
+eststo pgm3: stcox pgm1000 i.HIV_pcat $vars, noshow
 
 ***********************************************************************************************************
 **************************************** Model 2***********************************************************
 ***********************************************************************************************************
 ** population prevalence of detectable viremia for a 1 percent increase
 eststo ppvl1: stcox ppvl_pc , noshow
-eststo ppvl2: stcox ppvl_pc $prev , noshow
+eststo ppvl2: stcox ppvl_pc i.HIV_pcat , noshow
 eststo ppvl3: stcox ppvl_pc $vars, noshow
 
 ***********************************************************************************************************

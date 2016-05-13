@@ -8,11 +8,11 @@
 ***********************************************************************************************************
 ** Get IIntIDs from Demograpy dataset 2014
 use "$source/RD02-002_Demography", clear
-keep BSIntID IIntID ACDIS_IIntID Sex 
 
 ** Get relevant IDs and vars
 duplicates drop IIntID, force
 clonevar ACDIS_IIntID = IIntID 
+keep IIntID ACDIS_IIntID Sex 
 distinct IIntID 
 
 tempfile Demo
@@ -59,17 +59,15 @@ keep if inlist(TestYear, 2011)
 
 ** Age
 keep if inrange(AgeTested, 15, 65)
-egen Age = cut(AgeTested), at(15, 20, 25, 30, 35, 40, 45, 100) icode label
 
 gen log10VL = log10(ViralLoad) 
 gen Over50k = cond(ViralLoad>=50000, 1, 0)
 
 drop ACDIS_IIntID 
-keep IIntID Sex TestDate TestYear ViralLoad Age log10VL Over50k DateOfInitiationMin
+keep IIntID Sex TestDate TestYear ViralLoad AgeTested log10VL Over50k DateOfInitiationMin
 rename DateOfInitiationMin DateOfInitiation
 
 ** Save datasets 
-keep if TestYear==2011 
 distinct IIntID 
 gen Data = "FVL"
 
@@ -93,12 +91,11 @@ rename datereceivedatacvl TestDate
 gen TestYear = year(TestDate)
 
 ** Get Sex and other  vars
-merge m:1 IIntID using "`Demo'", keep(match) nogen keepusing(Sex)
-merge m:1 IIntID using "`Individuals'", keep(match) nogen
+merge m:1 IIntID using "`Demo'" , keep(match) nogen keepusing(Sex)
+merge m:1 IIntID using "`Individuals'" , keep(match) nogen
 merge m:1 IIntID using "`ARTDate'" , keep(1 3) nogen 
 
-gen AgeYr = int((TestDate - DateOfBirth)/365.25) 
-egen Age = cut(AgeYr), at(15, 20, 25, 30, 35, 40, 45, 100) icode label
+gen AgeTested = int((TestDate - DateOfBirth)/365.25) 
 
 set seed 339487731
 gen RandomUndetectable =int(1500*runiform()) if vlbelowldl == "Yes"
@@ -109,7 +106,7 @@ drop if missing(ViralLoad)
 gen log10VL = log10(ViralLoad)
 gen Over50k = cond(ViralLoad>=50000, 1, 0)
 
-keep IIntID Sex TestDate TestYear ViralLoad Age DateOfInitiation log10VL Over50k
+keep IIntID Sex TestDate TestYear ViralLoad AgeTested DateOfInitiation log10VL Over50k
 gen Data = "CVL"
 
 tempfile CVLdat
@@ -120,14 +117,40 @@ save "`CVLdat'"
 ***********************************************************************************************************
 use "`FVLdat'", clear
 append using "`CVLdat'"
+egen Age = cut(AgeTested), at(15, 20, 25, 30, 35, 40, 45, 100) icode label
 gen Female = (Sex==2)
 drop Sex
+gen VLSuppressed = (ViralLoad<1500)
 gen OnART = (DateOfInitiation < date("2011-07-01", "YMD"))
 saveold "$derived/PVL2011", replace
 
 
 ** Bring in BSIntID 
 use "$source/RD02-002_Demography", clear
+keep IIntID BSIntID  ExpYear ExpDays 
 keep if ExpYear==2011
-keep IIntID BSIntID  ExpYear
-merge m:1 IIntID using "$derived/PVL2011"
+
+bysort IIntID : egen MaxBS = max(ExpDays)
+bysort IIntID: gen MaxBSID = BSIntID if (MaxBS==ExpDays)
+collapse (firstnm) MaxBSID, by(IIntID)
+rename MaxBSID BSIntID
+merge 1:m IIntID using "$derived/PVL2011", keep(2 3) nogen
+
+keep IIntID BSIntID Age* Female ViralLoad VLSuppressed OnART Data
+sort Data IIntID 
+outsheet using "$derived\VLData.xls", comma replace
+
+
+use "$source/RD02-002_Demography", clear
+keep BSIntID IIntID ExpYear HIVPositive AgeGrp Sex
+
+clonevar Age = AgeGrp
+keep if AgeGrp>=9
+tab AgeGrp
+gen Female = (Sex==2)
+
+keep if ExpYear==2011
+duplicates drop IIntID BSIntID, force
+
+keep BSIntID IIntID HIVPositive Age Female
+outsheet using "$derived\HIVPrev.csv", comma replace

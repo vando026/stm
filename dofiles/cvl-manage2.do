@@ -6,21 +6,24 @@
 ***********************************************************************************************************
 **************************************** Bring in Datasets*************************************************
 ***********************************************************************************************************
-insheet using "$source/RegisteredPointLocationsMI_CVL+ARTEMIS.csv", clear
-rename bsintid BSIntID
+import excel using "$source/Viral load estimations.xls", clear firstrow 
 
-** lets rename these vars, too long
-rename pvl_prev_vlbaboveldlyesnoincneg ppvl // population prev of detectable viremia. 
-rename pvl_prev_vlbaboveyesno_gauss199 ppvlg //proportion  of pos suppressed
-rename pvl_geo_mean_lnvlresultcopiesml pgm
-rename art_prev_vlbaboveldlyesnoincneg apvl
-rename art_geo_mean_lnvlresultcopiesml agm
-rename art_prev_vlaboveldlyesno2011    apvlg //??
-rename hiv8_2011_prev_trim_1 HIV_prev
-
-foreach var of varlist ppvl-apvl {
-  sum `var'
+** I have to format vars from Diego file
+foreach var of varlist PVL_prev_v - PVL_males_15 {
+  qui ds `var', has(type string)
+  if "`=r(varlist)'" != "." {
+    qui replace `var' = "" if `var'=="-"
+    qui destring `var', replace
+  }
 }
+
+foreach var of varlist *_prev_* {
+  ds `var'
+  replace `var' = `var'*100
+}
+
+
+
 
 ** Recode vars for analysis
 gen ppvl_pc = ppvl*100
@@ -62,22 +65,6 @@ duplicates drop IIntID, force
 tempfile Individuals
 save "`Individuals'"
 
-use "$source/ART Coverage and HIV prevalence by BS_final_v12", clear
-keep BSIntID X_2011artcoverage_1
-rename X_2011artcoverage_1 ARTCov2011
-gen ARTCov2011_10 = ARTCov2011*10
-tempfile ARTCov
-save "`ARTCov'" 
-
-insheet using "$source/logvl.csv", clear 
-rename bsintid BSIntID
-rename mean_log* mnLogVL 
-
-summarize mnLogVL, meanonly
-gen cmnLogVL =  mnLogVL - r(mean)
-
-tempfile BS_CVL
-save "`BS_CVL'" 
 
 ***********************************************************************************************************
 **************************************** Demography *******************************************************
