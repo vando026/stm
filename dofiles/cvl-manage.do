@@ -125,32 +125,3 @@ gen OnART = (DateOfInitiation < date("2011-07-01", "YMD"))
 saveold "$derived/PVL2011", replace
 
 
-** Bring in BSIntID 
-use "$source/RD02-002_Demography", clear
-keep IIntID BSIntID  ExpYear ExpDays 
-keep if ExpYear==2011
-
-bysort IIntID : egen MaxBS = max(ExpDays)
-bysort IIntID: gen MaxBSID = BSIntID if (MaxBS==ExpDays)
-collapse (firstnm) MaxBSID, by(IIntID)
-rename MaxBSID BSIntID
-merge 1:m IIntID using "$derived/PVL2011", keep(2 3) nogen
-
-keep IIntID BSIntID Age* Female ViralLoad VLSuppressed OnART Data
-sort Data IIntID 
-outsheet using "$derived\VLData.xls", comma replace
-
-
-use "$source/RD02-002_Demography", clear
-keep BSIntID IIntID ExpYear HIVPositive AgeGrp Sex
-
-clonevar Age = AgeGrp
-keep if AgeGrp>=9
-tab AgeGrp
-gen Female = (Sex==2)
-
-keep if ExpYear==2011
-duplicates drop IIntID BSIntID, force
-
-keep BSIntID IIntID HIVPositive Age Female
-outsheet using "$derived\HIVPrev.csv", comma replace

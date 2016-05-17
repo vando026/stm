@@ -20,23 +20,16 @@ qui {
   }
 }
 
-rename PPDV_PVL PPDV
-rename PPDV_FVL FPDV
-rename PPDV_FVL_Females FPDV_Females 
-rename PPDV_FVL_Males FPDV_Males 
-rename PPDV_PVL_Females PPDV_Females
-rename PPDV_PVL_Males PPDV_Males
-
 ** Make HIV prev
 gen HIV_prev = hiv8_2011_ * 100
 egen HIV_pcat = cut(HIV_prev), at(0, 12.5, 25, 100) icode label
 tab HIV_pcat
 
+drop PVL_prev_v - ART_prev_1 
 
-** foreach var of varlist *geo_me* {
-**   sum `var'
-**   gen `var'_1000 = `var'/1000
-** }
+foreach var of varlist FVL_unadjusted  - PVL_males_15 {
+  qui replace `var' = `var'/1000
+}
 
 tempfile Point
 save "`Point'"
