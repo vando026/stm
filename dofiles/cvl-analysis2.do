@@ -3,12 +3,6 @@
 //  project:	CVL
 //  author:     AV / Created: 03Feb2016 
 
-/** legend:
-pgm = pvl_geo_mean_lnvlresultcopiesml
-ppvl = pvl_prev_vlbaboveldlyesnoincneg
-ppvlg = pvl_prev_vlbaboveyesno_gauss199 */
-
-
 ***********************************************************************************************************
 **************************************** Single Rec Data **************************************************
 ***********************************************************************************************************
@@ -24,10 +18,16 @@ global vars "Female i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
 ***********************************************************************************************************
 **************************************** Model 1 **********************************************************
 ***********************************************************************************************************
+
+
+
+
+
+
 ** population viral load--geometric mean, for a 1000 copies/ml increase
-eststo pgm1: stcox pgm1000 , noshow
-eststo pgm2: stcox pgm1000 i.HIV_pcat, noshow
-eststo pgm3: stcox pgm1000 i.HIV_pcat $vars, noshow
+eststo pgm1: stcox PVL_unadjusted, noshow
+eststo pgm2: stcox PVL_geo_me_1000 i.HIV_pcat, noshow
+eststo pgm3: stcox PVL_geo_me_1000 i.HIV_pcat $vars, noshow
 
 ***********************************************************************************************************
 **************************************** Model 2***********************************************************
@@ -49,9 +49,9 @@ eststo apvl3: stcox apvl_pc $vars, noshow
 **************************************** Model 4***********************************************************
 ***********************************************************************************************************
 ** facility-based geometric mean
-eststo agm1: stcox agm1000 , noshow
-eststo agm2: stcox agm1000 $prev , noshow
-eststo agm3: stcox agm1000 $vars, noshow
+eststo agm1: stcox FVL_unadjusted , noshow
+eststo agm2: stcox FVL_unadjusted $prev , noshow
+eststo agm3: stcox FVL_unadjusted $vars, noshow
 
 ***********************************************************************************************************
 **************************************** Combined *********************************************************

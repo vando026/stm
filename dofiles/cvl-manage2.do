@@ -9,56 +9,43 @@
 import excel using "$source/Viral load estimations.xls", clear firstrow 
 
 ** I have to format vars from Diego file
-foreach var of varlist PVL_prev_v - PVL_males_15 {
-  qui ds `var', has(type string)
-  if "`=r(varlist)'" != "." {
-    qui replace `var' = "" if `var'=="-"
-    qui destring `var', replace
+qui {
+  foreach var of varlist PVL_prev_v - PPDV_PVL_Males  {
+    ds `var', has(type string)
+    if "`=r(varlist)'" != "." {
+      replace `var' = "" if `var'=="-"
+      destring `var', replace
+    }
+    drop if missing(`var')
   }
 }
 
-foreach var of varlist *_prev_* {
-  ds `var'
-  replace `var' = `var'*100
-}
+rename PPDV_PVL PPDV
+rename PPDV_FVL FPDV
+rename PPDV_FVL_Females FPDV_Females 
+rename PPDV_FVL_Males FPDV_Males 
+rename PPDV_PVL_Females PPDV_Females
+rename PPDV_PVL_Males PPDV_Males
 
-
-
-
-** Recode vars for analysis
-gen ppvl_pc = ppvl*100
-gen apvl_pc = apvl*100
-gen ppvlg_pc = ppvlg*100
-gen apvlg_pc = apvlg*100
-
-sum ppvlg_pc
-egen ppvl_pcat = cut(ppvl_pc), at(0, 15, 20, 110) icode label
-tab ppvl_pcat
-capture drop ppvlg_pcat
-egen ppvlg_pcat = cut(ppvlg_pc), at(0, 65, 75, 110) icode label
-tab ppvlg_pcat
-
-replace pgm = 17000 if pgm > 17000
-gen pgm1000 = pgm/1000
-gen agm1000 = agm/1000
-gen agm100 = agm/100
-egen pgm1000_cat = cut(pgm1000), at(0, 5, 10,  17)
-tab pgm1000_cat 
-
-capture drop pgm_cat
-egen pgm_cat = cut(pgm), at(0, 7000, 10000,  18000) icode
-tab1 pgm1000_cat pgm_cat
-sum pgm1000
-
-gen HIVpc = HIV_prev * 100
-
-capture drop HIV_pcat
-egen HIV_pcat = cut(HIVpc), at(0, 12.5, 25, 100) icode label
+** Make HIV prev
+gen HIV_prev = hiv8_2011_ * 100
+egen HIV_pcat = cut(HIV_prev), at(0, 12.5, 25, 100) icode label
 tab HIV_pcat
+
+
+** foreach var of varlist *geo_me* {
+**   sum `var'
+**   gen `var'_1000 = `var'/1000
+** }
 
 tempfile Point
 save "`Point'"
 
+
+
+***********************************************************************************************************
+**************************************** Individuals ******************************************************
+***********************************************************************************************************
 use "$source/RD01-01_ACDIS_Individuals", clear
 keep IIntID DateOfBirth 
 duplicates drop IIntID, force
@@ -91,15 +78,9 @@ rename MaxBSID BSIntID
 
 ** Bring in CVL, no match for BSIntId 17887
 merge m:1 BSIntID using "`Point'", keep(match) nogen 
-merge m:1 BSIntID using "`BS_CVL'", keep(match) nogen
 
-** Bring in ART cov
-** merge m:1 BSIntID using "`ARTCov'", keep(1 3) nogen
-** replace ARTCov2011 = runiform() if missing(ARTCov2011)
-** drop if missing(ARTCov2011)
-
-encode(isurbanorrural) if isurbanorrural != "DFT", gen(urban)
-drop isurbanorrural
+encode(IsUrbanOrR) if IsUrbanOrR != "DFT", gen(urban)
+drop IsUrbanOrR 
 tempfile BS_dat
 save "`BS_dat'" 
 
@@ -124,13 +105,10 @@ drop if Age < $ad
 egen AgeGrp = cut(Age), at($ad, 20(5)90, 110) label icode
 ** Make this for AgeSex var
 egen AgeGrp1 = cut(Age), at($ad, 20(5)45, 110) label icode
-tab AgeGrp1
 
 ** Make new AgeSex Var
 gen Female = (Sex==2)
 gen SexLab = cond(Sex==2, "F", "M")
-generate AgeSex=SexLab + string(AgeGrp1)
-encode AgeSex, gen(AgeSexCat)
 
 saveold "$derived/cvl-main2", replace
 
