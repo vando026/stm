@@ -20,14 +20,30 @@ global vars "Female i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
 ***********************************************************************************************************
 
 ** foreach var of varlist PVL_unadjusted - PPDV_PVL_Males  {
-foreach var of varlist *unadjusted {
+foreach var of varlist *geo* {
   dis as text _n "=========================================> Showing for `var'"
   stcox `var', noshow
   stcox `var' $prev, noshow
   stcox `var' $prev $vars, noshow
 } 
 
+
+foreach var of varlist *prev_v {
+  dis as text _n "=========================================> Showing for `var'"
+  stcox `var', noshow
+  stcox `var' $vars, noshow
+} 
+
+
 ** foreach var of varlist PVL_unadjusted - PPDV_PVL_Males  {
+foreach var of varlist *_unadjusted  {
+  dis as text _n "=========================================> Showing for `var'"
+  stcox `var', noshow
+  stcox `var' $prev, noshow
+  stcox `var' $prev $vars, noshow
+} 
+
+
 foreach var of varlist PPDV_?VL {
   dis as text _n "=========================================> Showing for `var'"
   stcox `var', noshow
@@ -35,11 +51,9 @@ foreach var of varlist PPDV_?VL {
 } 
 
 
-
-
-
-
-
+***********************************************************************************************************
+***************************************** Model 1 *********************************************************
+***********************************************************************************************************
 ** population viral load--geometric mean, for a 1000 copies/ml increase
 eststo pgm1: stcox PVL_unadjusted, noshow
 eststo pgm2: stcox PVL_geo_me_1000 i.HIV_pcat, noshow

@@ -91,3 +91,6 @@ drop if EarliestHIVNegative == EndDate
 assert EarliestHIVNegative < EndDate 
 saveold "$derived/ac-HIV_Dates_2011", replace
 
+** distinct IIntID 
+** distinct IIntID if SeroConvertEvent ==1 
+

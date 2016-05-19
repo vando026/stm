@@ -44,7 +44,6 @@ save "`HSE2011'"
 use "$source\MGH_Contacts2004to12", clear
 append using "$source\WGH_Contacts2004to12"
 rename IIntId IIntID
-merge m:1 IIntID using "$derived/cvl-main2", keep(2 3)
 keep IIntID VisitDate PartnersInLastTwelveMonths 
 fdate VisitDate
 gen ExpYear = year(VisitDate)
@@ -68,42 +67,29 @@ save "`Partners'"
 **************************************** Mariatal *********************************************************
 ***********************************************************************************************************
 use "$source\MGH_Contacts2004to12", clear
-append using "$source\WGH_Contacts2004to12"
 rename IIntId IIntID
-merge m:1 IIntID using "$derived/cvl-main2", keep(2 3)
 
-tab _merge
 keep IIntID VisitDate CurrentMaritalStatusName  
 
 fdate VisitDate 
 gen ExpYear = year(VisitDate)
+drop if ExpYear > 2011
 
-tab CurrentMaritalStatusName , nolab
-encode CurrentMaritalStatusName, gen(MaritalStatus)
+encode CurrentMaritalStatusName, gen(MaritalStatus1)
 ** tab MaritalStatus ,nolab
-recode MaritalStatus (1/2 4 6/8 11 13 15 16 = 2 "Married") ///
-  (3 12 14 = 3 "Polygamous") (9/10 5 17 = 1 "Single") (nonmiss = .), gen(MaritalStatus1)
+recode MaritalStatus1 (1/2 4 6/8 11 13 15 16 = 2 "Married") ///
+  (3 12 14 = 3 "Polygamous") (9/10 5 17 = 1 "Single") (nonmiss = .), gen(Marital)
 
-bysort IIntID (ExpYear): carryforward MaritalStatus1, replace
-bysort IIntID: gen m1 = MaritalStatus1 if ExpYear==2012
-** Give preference to marital status 2012
-bysort IIntID: egen Marital = min(m1)
-** If not  in 2012 get last recent Marital
-bysort IIntID (VisitDate): egen LastMarital = max(ExpYear) if !missing(MaritalStatus1)
-bysort IIntID: gen LM1 =  MaritalStatus1  if LastMarital == ExpYear
-bysort IIntID: egen LM2 = max(LM1)
-replace Marital = LM2 if missing(Marital)
+bysort IIntID (ExpYear): carryforward Marital, replace
+keep if ExpYear==2011
 duplicates drop IIntID, force
+
 label define LblMarital 2 "Marital" 3 "Polygamous" 1 "Single"
 label values Marital LblMarital
-** Ok randomly replace with 1-3
-gen Replace = 1+int((3-1+1)*runiform())
-replace Marital = Replace if missing(Marital)
-tab Marital , miss
 keep IIntID Marital
 
 ** Now bring in partners
-merge 1:1 IIntID using "`Partners'", nogen
+merge 1:1 IIntID using "`Partners'", keep(1 3) nogen
 replace Partners = 1 if inlist(Marital, 2, 3) & missing(Partners)
 replace Partners = 0 if Marital==1 & missing(Partners)
 egen PartnerCat = cut(Partners), at(0, 1, 2, 100)
@@ -122,5 +108,12 @@ merge m:1 BSIntID using "`HSE2011'" , keep(1 3) nogen
 gen Replace = 1+int((5-1+1)*runiform())
 replace AIQ = Replace if missing(AIQ)
 drop Replace
-merge 1:1 IIntID using "`Marital'", nogen
+merge m:1 IIntID using "`Marital'", keep(1 3) //nogen
+replace Marital = 1 if missing(Marital) & Age < 18
+** Ok randomly replace with 1-3
+gen Replace = 1+int((3-1+1)*runiform())
+replace Marital = Replace if missing(Marital)
+tab Marital , miss
+replace PartnerCat = 0 if missing(PartnerCat) & Age < 18
+replace PartnerCat = rbinomial(2, 0.5) if missing(PartnerCat)
 saveold "$derived/cvl-analysis2", replace
