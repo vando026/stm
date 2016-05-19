@@ -13,15 +13,6 @@ keep IIntID VisitDate HIVResult Sex
 ** Associate dates with Test result
 bysort IIntID (VisitDate): gen HIVNegative = cond(HIVResult==0, VisitDate, .)
 bysort IIntID (VisitDate): gen HIVPositive = cond(HIVResult==1, VisitDate, .)
-format HIVNegative HIVPositive %td
-distinct IIntID if !missing(HIVNegative)
-distinct IIntID if !missing(HIVPositive)
-
-** Drop not applicable results
-drop if missing(HIVNegative) & missing(HIVPositive)
-
-tempfile HIVDat
-save "`HIVDat'"
 
 ** Now make the dates
 bysort IIntID   : egen EarliestHIVNegative = min(HIVNegative)
@@ -31,98 +22,72 @@ bysort IIntID   : egen LatestHIVPositive = max(HIVPositive)
 format *HIV* %td
 
 ** Now work with single obs per Indiv
-collapse (firstnm) EarliestHIVNegative LatestHIVNegative EarliestHIVPositive LatestHIVPositive, by(IIntID)
+collapse (firstnm) EarliestHIVNegative LatestHIVNegative EarliestHIVPositive LatestHIVPositive , by(IIntID)
+
+** These indivs dont have any test info
+egen MissCount = rowmiss(Earliest* Latest*)
+drop if MissCount==4
 
 ** Sanity check
-assert EarliestHIVNegative <= LatestHIVNegative if !missing(EarliestHIVNegative, LatestHIVNegative)
 
-** We have LatestNegativeDate after EarliestHIVPositive. 13Apr2015 only 50 individuals
+** We have LatestNegativeDate after EarliestHIVPositive. 02May2016:  101 individuals
 gen _LateNegAfterEarlyPos =  (LatestHIVNegative > EarliestHIVPositive & !missing(EarliestHIVPositive, LatestHIVNegative))
-distinct IIntID if _LateNegAfterEarlyPos 
 
-** SO these are the unresolved test dates, we drop approx 101
-keep if _LateNegAfterEarlyPos==1
-keep IIntID
-tempfile DropID
-save "`DropID'"
+** I just drop these individuals, irreconcilable
+drop if _LateNegAfterEarlyPos 
 
+** Drop any indiv that dont have a first neg date.
+egen AnyNegHIV = rownonmiss(EarliestHIVNegative LatestHIVNegative)
+drop if AnyNegHIV==0
+
+** Must have two tests, if early neg date is equal to late neg date and missing pos date then drop
+drop if  (EarliestHIVNegative==LatestHIVNegative) & missing(EarliestHIVPositive)
 
 ***********************************************************************************************************
-**************************************** Bring In data ****************************************************
+****************************************Sanity Checks******************************************************
+***********************************************************************************************************
+assert EarliestHIVNegative < EarliestHIVPositive if !missing(EarliestHIVPositive, EarliestHIVNegative) 
+assert LatestHIVNegative < EarliestHIVPositive if !missing(EarliestHIVPositive, LatestHIVNegative) 
+assert EarliestHIVNegative <= LatestHIVNegative 
+assert !missing(EarliestHIVPositive, LatestHIVNegative) if !missing(EarliestHIVPositive)
+drop AnyNegHIV MissCount _LateNegAfterEarlyPos LatestHIVPositive
+
+tempfile HIVDat
+save "`HIVDat'"
+
+***********************************************************************************************************
+**************************************** Make data for 2011 - *********************************************
 ***********************************************************************************************************
 use "`HIVDat'", clear
-merge m:1 IIntID using "`DropID'", keep(1 2) nogen
 
-sort IIntID VisitDate 
-tab HIVResult 
-
-** Get years of tests
-gen YearNeg = year(HIVNegative)
-gen YearPos = year(HIVPositive)
-
-** We exclude any indiv who did not have a Neg test in 2011 and before
-bysort IIntID: egen HIVNegStart_2011 = max(YearNeg <= 2011)
-drop if HIVNegStart_2011==0 
+** We exclude any indiv whose latest neg was before 2011 and never positive
+** IE The repeat tester is right censored before start of study
+drop if year(LatestHIVNegative) < 2011 & missing(EarliestHIVPositive)
 
 ** If any positives prior to 2011 drop
-bysort IIntID: egen FirstPos = min(YearPos)
-drop if FirstPos < 2011
-drop FirstPos
-
-** Get HIV pos in 2011 and after
-bysort IIntID: egen HIVPos2011_End = max(inrange(YearPos, 2011, 2015))
-
-** Use to identify Negative repeat-testers
-bysort IIntID: egen HIVNeg2011_End = max(inrange(YearNeg, 2011, 2015))
-
-** Now identify Repeat tester. Up to this point, all remain indiv had a neg test prior to 2011.
-** So anyone is a repeat tester if they have a neg or pos from 2011 onward. 
-** Example: ID265 has neg in 2003 but no tests after 2011
-gen RepeatTester = (HIVNeg2011_End | HIVPos2011_End) 
-
-keep if RepeatTester==1
-distinct IIntID 
+** IE The repeat tester is right censored before start of study
+drop if year(EarliestHIVPositive) < 2011
 
 ***********************************************************************************************************
-**************************************** Censor Dates******************************************************
-***********************************************************************************************************
-bysort IIntID   : egen LatestHIVNegative = max(HIVNegative)
-bysort IIntID   : egen EarliestHIVPositive = min(HIVPositive)
-gen EarliestHIVNegative = date("01-01-2011", "DMY")
-format LatestHIVNegative EarliestHIV* %td
-
-duplicates drop IIntID, force
-keep IIntID Sex Earliest* Latest*
-
-** Sanity checks
-assert !missing(EarliestHIVPositive) | !missing(LatestHIVNegative)
-assert EarliestHIVNegative < EarliestHIVPositive if !missing(EarliestHIVPositive, EarliestHIVNegative) 
-assert !missing(EarliestHIVPositive, LatestHIVNegative) if !missing(EarliestHIVPositive)
-assert (LatestHIVNegative < EarliestHIVPositive) if !missing(EarliestHIVPositive, LatestHIVNegative) 
-
-***********************************************************************************************************
-**************************************** Impute dates or Not **********************************************
+**************************************** Impute dates *****************************************************
 ***********************************************************************************************************
 gen SeroConvertEvent = !missing(EarliestHIVPositive)
 
-** Some LatestHIVNegative dates may be very early on, not reasonable to draw between long interval
-drop if year(LatestHIVNegative) < 2008
 ** To draw a random seroconversion date between latest HIV negative and Earliest HIV positive. 
 set seed 200
 gen DateSeroConvert = int((EarliestHIVPositive - LatestHIVNegative)*runiform() + LatestHIVNegative) if SeroConvertEvent==1
 format DateSeroConvert %td
 assert inrange(DateSeroConvert, LatestHIVNegative, EarliestHIVPositive) if SeroConvertEvent==1
+
+** If you impute dates before 2011 drop
+drop if year(DateSeroConvert) < 2011 & !missing(SeroConvertEvent)
+
 gen EndDate = cond(SeroConvertEvent==1, DateSeroConvert, LatestHIVNegative)
-** Now drop the obs if randomly selected prior to 2011
-gen ImputePos = year(DateSeroConvert)
-bysort IIntID: egen AnyHIVPosImpPre_2011 = max(ImputePos < 2011)
-drop if AnyHIVPosImpPre_2011==1
-drop AnyHIVPosImpPre_2011
-distinct IIntID if SeroConvertEvent == 1
+format EndDate %td
+replace EarliestHIVNegative = date("01-01-2011", "DMY")
+drop LatestHIVNegative
 
-format EndDate Earliest* %td
-distinct IIntID if SeroConvertEvent == 1
-
-order IIntID
+drop if EarliestHIVNegative == EndDate 
+assert EarliestHIVNegative < EndDate 
 saveold "$derived/ac-HIV_Dates_2011", replace
 

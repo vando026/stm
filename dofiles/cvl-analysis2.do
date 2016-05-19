@@ -20,12 +20,22 @@ global vars "Female i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
 ***********************************************************************************************************
 
 ** foreach var of varlist PVL_unadjusted - PPDV_PVL_Males  {
-foreach var of varlist *PPDV* {
+foreach var of varlist *unadjusted {
   dis as text _n "=========================================> Showing for `var'"
   stcox `var', noshow
+  stcox `var' $prev, noshow
+  stcox `var' $prev $vars, noshow
+} 
+
+** foreach var of varlist PVL_unadjusted - PPDV_PVL_Males  {
+foreach var of varlist PPDV_?VL {
+  dis as text _n "=========================================> Showing for `var'"
   stcox `var', noshow
   stcox `var' $vars, noshow
 } 
+
+
+
 
 
 

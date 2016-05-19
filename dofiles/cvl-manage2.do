@@ -16,8 +16,14 @@ qui {
       replace `var' = "" if `var'=="-"
       destring `var', replace
     }
-    drop if missing(`var')
   }
+}
+
+** No observations
+drop if BSIntID > 17884
+
+foreach var of varlist *PPDV* {
+  replace `var' = `var' * 100
 }
 
 ** Make HIV prev
@@ -25,7 +31,7 @@ gen HIV_prev = hiv8_2011_ * 100
 egen HIV_pcat = cut(HIV_prev), at(0, 12.5, 25, 100) icode label
 tab HIV_pcat
 
-drop PVL_prev_v - ART_prev_1 
+** drop PVL_prev_v - ART_prev_1 
 
 foreach var of varlist FVL_unadjusted  - PVL_males_15 {
   qui replace `var' = `var'/1000
