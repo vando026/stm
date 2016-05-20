@@ -117,11 +117,20 @@ save "`CVLdat'"
 ***********************************************************************************************************
 use "`FVLdat'", clear
 append using "`CVLdat'"
-egen Age = cut(AgeTested), at(15, 20, 25, 30, 35, 40, 45, 100) icode label
-gen Female = (Sex==2)
-drop Sex
-gen VLSuppressed = (ViralLoad<1500)
-gen OnART = (DateOfInitiation < date("2011-07-01", "YMD"))
-saveold "$derived/PVL2011", replace
 
+** Ok, multiple VL by indiv
+bysort IIntID Data: egen VLmn = mean(ViralLoad)
+replace  VLmn = floor(VLmn)
+collapse (firstnm) ViralLoad = VLmn AgeTested Sex, by(IIntID Data )
+
+bysort IIntID: egen Age1 = min(AgeTested)
+
+egen Age = cut(Age1), at(15, 20, 25, 30, 35, 40, 45, 100) icode label
+gen Female = (Sex==2)
+gen VLSup_ = (ViralLoad<1550)
+
+drop Sex Age1 AgeTested
+reshape wide ViralLoad VLSup_, i(IIntID) j(Data) string
+
+saveold "$derived/PVL2011", replace
 
