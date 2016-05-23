@@ -9,7 +9,6 @@ version 12.1
 ***********************************************************************************************************
 **************************************** Set paths ********************************************************
 ***********************************************************************************************************
-** Frank, you only need to change the AC_Path for everything to work (so long as you maintain my file hierachy)
 global AC_Path "$dropbox/AfricaCentre/Projects/CommunityVL"
 global dofile "$AC_Path/dofiles"
 

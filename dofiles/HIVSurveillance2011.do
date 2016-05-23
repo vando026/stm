@@ -28,13 +28,14 @@ collapse (firstnm) EarliestHIVNegative LatestHIVNegative EarliestHIVPositive Lat
 egen MissCount = rowmiss(Earliest* Latest*)
 drop if MissCount==4
 
-** Sanity check
-
 ** We have LatestNegativeDate after EarliestHIVPositive. 02May2016:  101 individuals
 gen _LateNegAfterEarlyPos =  (LatestHIVNegative > EarliestHIVPositive & !missing(EarliestHIVPositive, LatestHIVNegative))
 
 ** I just drop these individuals, irreconcilable
 drop if _LateNegAfterEarlyPos 
+
+tempfile HIVDat0
+save "`HIVDat0'"
 
 ** Drop any indiv that dont have a first neg date.
 egen AnyNegHIV = rownonmiss(EarliestHIVNegative LatestHIVNegative)

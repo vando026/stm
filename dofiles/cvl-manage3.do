@@ -8,6 +8,7 @@
 foreach year in 2009 2010 2011 2012 {
 use "$source\HSE`year'", clear
 ** for some reason the BSIntID var is named differently in some datasets
+
    if `year' <= 2005 {  
     rename BSIntId BSIntID
     display as text "`year'"  
