@@ -28,7 +28,7 @@ foreach var of varlist *geo* {
 } 
 
 
-foreach var of varlist *prev_v {
+foreach var of varlist *PDV {
   dis as text _n "=========================================> Showing for `var'"
   stcox `var', noshow
   stcox `var' $vars, noshow
@@ -50,6 +50,18 @@ foreach var of varlist PPDV_?VL {
   stcox `var' $vars, noshow
 } 
 log close 
+
+
+stcox PVL_geo_me , noshow
+stcox PVL_geo_me $prev, noshow
+stcox PVL_geo_me $prev $vars, noshow
+stcox PVL_geo_me $prev Female, noshow
+stcox PVL_geo_me $prev i.AgeGrp1 Female, noshow
+stcox FPDV
+
+
+
+
 
 ***********************************************************************************************************
 ***************************************** Model 1 *********************************************************

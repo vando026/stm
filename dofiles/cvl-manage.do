@@ -127,18 +127,10 @@ bysort IIntID: egen Age1 = min(AgeTested)
 
 egen Age = cut(Age1), at(15, 20, 25, 30, 35, 40, 45, 100) icode label
 gen Female = (Sex==2)
-gen VLSup_ = (ViralLoad<1550)
 
 drop Sex Age1 AgeTested
-reshape wide ViralLoad VLSup_, i(IIntID) j(Data) string
-
-foreach dat in CVL FVL {
-  gen Quin_`dat' = 0 if inrange(ViralLoad`dat', 0 , 1550)
-  replace Quin_`dat' = 2.5 if inrange(ViralLoad`dat', 1556, 3500) 
-  replace Quin_`dat' = 12 if inrange(ViralLoad`dat', 3501, 10000 ) 
-  replace Quin_`dat' = 13.5 if inrange(ViralLoad`dat', 10001, 50000 ) 
-  replace Quin_`dat' = 23 if ViralLoad`dat' > 50000 & !missing(ViralLoad`dat')
-}
+reshape wide ViralLoad , i(IIntID) j(Data) string
 
 saveold "$derived/PVL2011", replace
+
 

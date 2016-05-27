@@ -10,7 +10,7 @@ import excel using "$source/Viral load estimations.xls", clear firstrow
 
 ** I have to format vars from Diego file
 qui {
-  foreach var of varlist PVL_prev_v - PPDV_PVL_Males  {
+  foreach var of varlist PVL_prev_v - FPDV  {
     ds `var', has(type string)
     if "`=r(varlist)'" != "." {
       replace `var' = "" if `var'=="-"
@@ -22,7 +22,7 @@ qui {
 ** No observations
 drop if BSIntID > 17884
 
-foreach var of varlist *_prev_v *PPDV* {
+foreach var of varlist *_prev_v *PDV {
   replace `var' = `var' * 100
 }
 
@@ -33,7 +33,7 @@ tab HIV_pcat
 
 ** drop PVL_prev_v - ART_prev_1 
 
-foreach var of varlist *geo* FVL_unadjusted  - PVL_males_15 {
+foreach var of varlist *geo* {
   qui replace `var' = `var'/1000
 }
 
