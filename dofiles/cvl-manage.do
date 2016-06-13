@@ -125,7 +125,7 @@ collapse (firstnm) ViralLoad = VLmn AgeTested Sex, by(IIntID Data )
 
 bysort IIntID: egen Age1 = min(AgeTested)
 
-egen Age = cut(Age1), at(15, 20, 25, 30, 35, 40, 45, 100) icode label
+egen AgeTestedVL = cut(Age1), at(15, 20, 25, 30, 35, 40, 45, 100) icode label
 gen Female = (Sex==2)
 
 drop Sex Age1 AgeTested
