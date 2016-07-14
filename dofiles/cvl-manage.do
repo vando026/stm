@@ -129,7 +129,7 @@ egen AgeTestedVL = cut(Age1), at(15, 20, 25, 30, 35, 40, 45, 100) icode label
 gen Female = (Sex==2)
 
 drop Sex Age1 AgeTested
-reshape wide ViralLoad , i(IIntID) j(Data) string
+** reshape wide ViralLoad , i(IIntID) j(Data) string
 
 saveold "$derived/PVL2011", replace
 

@@ -8,14 +8,13 @@
 ***********************************************************************************************************
 ** Get summary stats for tables
 use "$derived/PVL2011", clear 
+rename AgeTestedVL Age
 bysort Data:  tab1 Female Age
 bysort Data: sum ViralLoad, d
 bysort Data: ameans ViralLoad
 bysort Data: gen VLSuppr = (ViralLoad<1550) 
 bysort Data: tab VLSuppr 
-bysort Data: tab OnART 
-bysort Data: tab Age Female
-
+** bysort Data: tab OnART 
 
 ** Look at indiv only on ART
 ** drop if OnART == 1 
@@ -33,7 +32,7 @@ statsby mean=r(p50) lb=r(p25) ub=r(p75), by(Data Female Age) saving("$derived/me
 statsby mean=r(mean) lb=r(lb) ub=r(ub), by(Data Female Age) saving("$derived/over50_2011", replace): /// 
   ci Over50k 
 
-foreach dat in gmean2011 mean2011 med2011 over50_2011 {
+foreach dat in gmean2011 mean2011 med2011 {
   use "$derived/`dat'", clear
   replace lb = 0 if lb < 0
   saveold "$derived/`dat'", replace

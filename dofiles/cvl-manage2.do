@@ -6,36 +6,44 @@
 ***********************************************************************************************************
 **************************************** Bring in Datasets*************************************************
 ***********************************************************************************************************
-import excel using "$source/Viral load estimations.xls", clear firstrow 
+import excel using "$source/Viral load estimation July04.xls", clear firstrow 
 
 ** I have to format vars from Diego file
-qui {
-  foreach var of varlist PVL_prev_v - FPDV  {
-    ds `var', has(type string)
-    if "`=r(varlist)'" != "." {
-      replace `var' = "" if `var'=="-"
-      destring `var', replace
-    }
+foreach var of varlist PVL_prev_v - FVL_Quinn_Transmission_rate  {
+  ds `var', has(type string)
+  if "`=r(varlist)'" != "." {
+    replace `var' = "" if `var'=="NA"
+    destring `var', replace
   }
 }
 
 ** No observations
 drop if BSIntID > 17884
 
-foreach var of varlist *_prev_v *PDV {
+** we want to make this a percentage
+foreach var of varlist *_prev_v *PDV* {
+  ds `var', v(20)
   replace `var' = `var' * 100
 }
 
-** Make HIV prev
+** Make HIV prev a percent
 gen HIV_prev = hiv8_2011_ * 100
 egen HIV_pcat = cut(HIV_prev), at(0, 12.5, 25, 100) icode label
 tab HIV_pcat
 
-** drop PVL_prev_v - ART_prev_1 
-
-foreach var of varlist *geo* {
+** the geometric mean vars are large, divide by 1000
+foreach var of varlist *geo* *5 ?VL_unadjusted ?VL_*males ?VL_age*  {
   qui replace `var' = `var'/1000
 }
+
+** ** recode the Quin index to catory
+** sum *Quinn*
+** foreach var of varlist *Quinn_Index {
+**   cap drop `var'_cat
+**   egen `var'_cat = cut(`var'), at(0, 2.5, 12, 13.5,  4, 20)
+** }
+
+
 
 tempfile Point
 save "`Point'"
