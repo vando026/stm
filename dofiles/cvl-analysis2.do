@@ -10,8 +10,12 @@
 log using "$output/Output.txt", replace text 
 
 use "$derived/cvl-analysis2", clear
+keep if !missing(PVL_geo_me, ART_geo_me, PPDV_PVL, PPDV_FVL, PVL_Quinn_Transmission_rate, FVL_Quinn_Transmission_rate)
+
 stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
   origin(EarliestHIVNegative) scale(365.25) exit(EndDate)
+
+distinct IIntID 
 
 ** Set covariates here once, so you dont have to do it x times for x models
 global prev "i.HIV_pcat"
@@ -70,8 +74,6 @@ restore
 ***********************************************************************************************************
 ***************************************** Model 1 *********************************************************
 ***********************************************************************************************************
-preserve
-keep if !missing(PVL_geo_me, ART_geo_me, PPDV_PVL, PPDV_FVL)
 ** population viral load--geometric mean, for a 1000 copies/ml increase
 ** eststo pgm1: stcox PVL_geo_me, noshow
 ** eststo pgm2: stcox PVL_geo_me i.HIV_pcat, noshow
@@ -110,35 +112,32 @@ global opts3 "mlabels(PVL PPDV FVL FPDV)"
 global names "rename(pgm1000 cvl ppvl_pc cvl agm1000 cvl apvl_pc cvl)"
 
 esttab pgm3 ppvl3 agm3 apvl3 using "$output/Model2.rtf", $opts1 $opts2 $opts3 $names
-restore
 
 ***********************************************************************************************************
 ****************************************  Quinn ***********************************************************
 ***********************************************************************************************************
-preserve
-keep if !missing(PVL_Quinn_Index, FVL_Quinn_Index, PVL_Quinn_Transmission_rate FVL_Quinn_Transmission_rate)
-eststo pvlq: stcox PVL_Quinn_Index $sex_vars, noshow
+** eststo pvlq: stcox PVL_Quinn_Index $sex_vars, noshow
 eststo pvlqt: stcox PVL_Quinn_Transmission_rate $sex_vars, noshow
-eststo fvlq: stcox FVL_Quinn_Index $sex_vars, noshow
+** eststo fvlq: stcox FVL_Quinn_Index $sex_vars, noshow
 eststo fvlqt: stcox FVL_Quinn_Transmission_rate $sex_vars, noshow
 global opts3 "mlabels(PQ PQT FQ FQT)"
 
-esttab pvlq pvlqt fvlq fvlqt using "$output/Model3.rtf", $opts1 $opts2 $opts3 $names
+esttab pvlqt fvlqt using "$output/Model3.rtf", $opts1 $opts2 $opts3 $names
 
-restore
 
 ***********************************************************************************************************
 **************************************** Compare model fit ************************************************
 ***********************************************************************************************************
 ** Get the model with no HIV prevalence
 est restore ppvl3
+est restore pgm3
 ** Run a likelhood test
-lrtest ppvl2, force
+lrtest  , force
 
 ** Compute AIC = -2ln L + 2(k+c), k is model parameters
-est restore ppvl2
-global ppvl2_ll =  e(ll)
-dis -2*$ppvl2_ll + 2*(4 + 1)
+est restore ppvl3
+global ppvl3_ll =  e(ll)
+dis -2*$ppvl3_ll + 2*(4 + 1)
 ** Pseudo R-squared
 dis "`e(r2_p)'"
 

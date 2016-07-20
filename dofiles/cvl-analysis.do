@@ -12,8 +12,7 @@ rename AgeTestedVL Age
 bysort Data:  tab1 Female Age
 bysort Data: sum ViralLoad, d
 bysort Data: ameans ViralLoad
-bysort Data: gen VLSuppr = (ViralLoad<1550) 
-bysort Data: tab VLSuppr 
+bysort Data: sum VLSuppressed
 ** bysort Data: tab OnART 
 
 ** Look at indiv only on ART

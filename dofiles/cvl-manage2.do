@@ -36,14 +36,22 @@ foreach var of varlist *geo* *5 ?VL_unadjusted ?VL_*males ?VL_age*  {
   qui replace `var' = `var'/1000
 }
 
-** ** recode the Quin index to catory
-** sum *Quinn*
-** foreach var of varlist *Quinn_Index {
-**   cap drop `var'_cat
-**   egen `var'_cat = cut(`var'), at(0, 2.5, 12, 13.5,  4, 20)
-** }
+** recode the Quin index to catory
+sum *Quinn*
+foreach var of varlist *Quinn_Index {
+  cap drop `var'_cat
+  egen `var'_cat = cut(`var'), at(0, 2.5, 12, 13.5,  23, 100)
+  tab `var'_cat
+}
 
 
+** recode the Quin index to catory
+sum *Quinn_Transmission_rate
+foreach var of varlist *Quinn_Transmission_rate {
+  cap drop `var'_cat
+  egen `var'_cat = cut(`var'), at(0, 3, 5, 100)
+  tab `var'_cat
+}
 
 tempfile Point
 save "`Point'"
