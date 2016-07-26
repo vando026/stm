@@ -147,11 +147,11 @@ dis -2*$ppvl3_ll + 2*(5 + 1)
 ** Psuedo R squared
 dis "`e(r2_p)'"
 
-
 ***********************************************************************************************************
 **************************************** Table 2 incidence ************************************************
 ***********************************************************************************************************
 use "$derived/cvl-analysis2", clear 
+keep if !missing(PVL_geo_me, ART_geo_me, PPDV_PVL, PPDV_FVL, PVL_Quinn_Transmission_rate, FVL_Quinn_Transmission_rate)
 stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
   origin(EarliestHIVNegative) scale(365.25) exit(EndDate) id(IIntID)
 
