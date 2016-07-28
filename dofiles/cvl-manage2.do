@@ -37,8 +37,10 @@ foreach var of varlist *geo* *5 ?VL_unadjusted ?VL_*males ?VL_age*  {
 }
 
 ** recode the Quin index to catory
-sum *Quinn*
 foreach var of varlist *Quinn_Index {
+  dis _n
+  ds `var', varwidth(30)
+  sum `var'
   cap drop `var'_cat
   egen `var'_cat = cut(`var'), at(0, 2.5, 12, 13.5,  23, 100)
   tab `var'_cat
