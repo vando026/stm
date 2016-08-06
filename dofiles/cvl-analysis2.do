@@ -10,7 +10,7 @@
 log using "$output/Output.txt", replace text 
 
 use "$derived/cvl-analysis2", clear
-keep if !missing(PVL_geo_me, ART_geo_me, PPDV_PVL, PPDV_FVL, PVL_Quinn_Transmission_rate, FVL_Quinn_Transmission_rate)
+keep if !missing(PVL_geo_me, ART_geo_me, PPDV_PVL, PPDV_FVL, PVL_Quinn_Continuous, FVL_Quinn_Continuous)
 
 stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
   origin(EarliestHIVNegative) scale(365.25) exit(EndDate)
@@ -117,9 +117,9 @@ esttab pgm3 ppvl3 agm3 apvl3 using "$output/Model2.rtf", $opts1 $opts2 $opts3 $n
 ****************************************  Quinn ***********************************************************
 ***********************************************************************************************************
 ** eststo pvlq: stcox PVL_Quinn_Index $sex_vars, noshow
-eststo pvlqt: stcox PVL_Quinn_Transmission_rate $sex_vars, noshow
+eststo pvlqt: stcox PVL_Quinn_Continuous $prev $sex_vars, noshow
 ** eststo fvlq: stcox FVL_Quinn_Index $sex_vars, noshow
-eststo fvlqt: stcox FVL_Quinn_Transmission_rate $sex_vars, noshow
+eststo fvlqt: stcox FVL_Quinn_Continuous $sex_vars, noshow
 global opts3 "mlabels(PQ PQT FQ FQT)"
 
 esttab pvlqt fvlqt using "$output/Model3.rtf", $opts1 $opts2 $opts3 $names

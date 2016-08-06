@@ -58,7 +58,7 @@ save "`Diego'"
 use "`Diego'", clear
 merge m:1 IIntID using "`HIV2011'", keepusing(HIVPositive2011) nogen keep(match) 
 
-merge m:1 IIntID using "$derived/PVL2011", nogen keepusing(Data) keep(1 3)
+merge 1:m IIntID using "$derived/PVL2011", nogen keepusing(Data) keep(1 3)
 outsheet using "$derived\Ind_PVL.xls", replace
 
 foreach dat in CVL {
@@ -93,6 +93,8 @@ bysort Data: tab Quin_
 **************************************** Quinn ************************************************************
 ***********************************************************************************************************
 ** Note 28Jul2016: New data for Diego, give survey data linked to BS
-use "$derived/PVL2011", clear
-collapse 
+use "`Diego'", clear
+merge 1:m IIntID using "$derived/PVL2011", nogen keepusing(Data ViralLoad) keep(match)
+drop AgeGrp
+outsheet using "$derived\VL_Ind.xls", replace
 

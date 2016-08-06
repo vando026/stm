@@ -6,10 +6,10 @@
 ***********************************************************************************************************
 **************************************** Bring in Datasets*************************************************
 ***********************************************************************************************************
-import excel using "$source/Viral load estimation July04.xls", clear firstrow 
+import excel using "$source/Viral load estimation Aug05.xls", clear firstrow 
 
 ** I have to format vars from Diego file
-foreach var of varlist PVL_prev_v - FVL_Quinn_Transmission_rate  {
+foreach var of varlist PVL_prev_v - Males_FVL_Quinn_Continuous {
   ds `var', has(type string)
   if "`=r(varlist)'" != "." {
     replace `var' = "" if `var'=="NA"
@@ -34,25 +34,6 @@ tab HIV_pcat
 ** the geometric mean vars are large, divide by 1000
 foreach var of varlist *geo* *5 ?VL_unadjusted ?VL_*males ?VL_age*  {
   qui replace `var' = `var'/1000
-}
-
-** recode the Quin index to catory
-foreach var of varlist *Quinn_Index {
-  dis _n
-  ds `var', varwidth(30)
-  sum `var'
-  cap drop `var'_cat
-  egen `var'_cat = cut(`var'), at(0, 2.5, 12, 13.5,  23, 100)
-  tab `var'_cat
-}
-
-
-** recode the Quin index to catory
-sum *Quinn_Transmission_rate
-foreach var of varlist *Quinn_Transmission_rate {
-  cap drop `var'_cat
-  egen `var'_cat = cut(`var'), at(0, 3, 5, 100)
-  tab `var'_cat
 }
 
 tempfile Point
