@@ -119,10 +119,10 @@ esttab pgm3 ppvl3 agm3 apvl3 using "$output/Model2.rtf", $opts1 $opts2 $opts3 $n
 ** eststo pvlq: stcox PVL_Quinn_Index $sex_vars, noshow
 eststo pvlqt: stcox PVL_Quinn_Continuous $prev $sex_vars, noshow
 ** eststo fvlq: stcox FVL_Quinn_Index $sex_vars, noshow
-eststo fvlqt: stcox FVL_Quinn_Continuous $sex_vars, noshow
-global opts3 "mlabels(PQ PQT FQ FQT)"
+eststo fvlqt: stcox FVL_Quinn_Continuous $prev $sex_vars, noshow
+global opts3 "mlabels(PQ FQ )  rename(PVL_Quinn_Continuous PQ FVL_Quinn_Continuous FQ) order(PQ FQ)"
 
-esttab pvlqt fvlqt using "$output/Model3.rtf", $opts1 $opts2 $opts3 $names
+esttab pvlqt fvlqt using "$output/Model3.rtf", $opts1 $opts2 $opts3 
 
 
 ***********************************************************************************************************
