@@ -6,10 +6,10 @@
 ***********************************************************************************************************
 **************************************** Bring in Datasets*************************************************
 ***********************************************************************************************************
-import excel using "$source/Viral load estimation Aug05.xls", clear firstrow 
+import excel using "$source/Viral load estimation Aug018.xls", clear firstrow 
 
 ** I have to format vars from Diego file
-foreach var of varlist PVL_prev_v - Males_FVL_Quinn_Continuous {
+foreach var of varlist PVL_prev_v - PVL_Quinn_transmission_continuou {
   ds `var', has(type string)
   if "`=r(varlist)'" != "." {
     replace `var' = "" if `var'=="NA"
