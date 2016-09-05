@@ -10,7 +10,7 @@
 log using "$output/Output.txt", replace text 
 
 use "$derived/cvl-analysis2", clear
-keep if !missing(PVL_geo_me, ART_geo_me, PPDV_PVL, PPDV_FVL, PVL_Quinn_Continuous, FVL_Quinn_Continuous,PVL_Quinn_Continuous,PVL_Quinn_transmission_continuou)
+keep if !missing(PVL_geo_me, ART_geo_me, PPDV_PVL, PPDV_FVL, PVL_Quinn_Continuous, FVL_Quinn_Continuous,PVL_Quinn_Continuous,PVL_Quinn_transmission_continuou, FVL_Quinn_transmission_continuou)
 
 stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
   origin(EarliestHIVNegative) scale(365.25) exit(EndDate)
@@ -125,11 +125,14 @@ eststo pvlqt: stcox PVL_Quinn_Continuous $prev $sex_vars, noshow
 ** eststo fvlq: stcox FVL_Quinn_Index $sex_vars, noshow
 eststo fvlqt: stcox FVL_Quinn_Continuous $prev $sex_vars, noshow
 global opts3 "mlabels(PQ FQ )  rename(PVL_Quinn_Continuous PQ FVL_Quinn_Continuous FQ) order(PQ FQ)"
-
 esttab pvlqt fvlqt using "$output/Model3.rtf", $opts1 $opts2 $opts3 
 
 
 eststo pvlqt2: stcox PVL_Quinn_transmission_continuou $prev $sex_vars, noshow
+eststo fvlqt2: stcox FVL_Quinn_transmission_continuou $prev $sex_vars, noshow
+global opts3 "mlabels(PQ FQ )  rename(PVL_Quinn_transmission_continuou PQ FVL_Quinn_transmission_continuou FQ) order(PQ FQ)"
+esttab pvlqt2 fvlqt2 using "$output/Model4.rtf", $opts1 $opts2 $opts3 
+
 ***********************************************************************************************************
 **************************************** Compare model fit ************************************************
 ***********************************************************************************************************
