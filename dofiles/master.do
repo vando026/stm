@@ -22,6 +22,11 @@ adopath+ "$AC_Path/dofiles/ado"
 ** Impute VL values for undetectable in ARTemis dataset to correspond with Pop VL method
 global VLImpute "Yes"
 
+** date created
+global today = subinstr("`=c(current_date)'"," ", "",.)
+dis as text "$today"
+
+
 ***********************************************************************************************************
 **************************************** Run do files *****************************************************
 ***********************************************************************************************************

@@ -58,36 +58,24 @@ save "`Diego'"
 use "`Diego'", clear
 merge m:1 IIntID using "`HIV2011'", keepusing(HIVPositive2011) nogen keep(match) 
 
-merge 1:m IIntID using "$derived/PVL2011", nogen keepusing(Data) keep(1 3)
-outsheet using "$derived\Ind_PVL.xls", replace
+merge 1:m IIntID using "$derived/PVL2011", nogen keepusing(Data ViralLoad) keep(1 3)
 
-foreach dat in CVL {
-  ds ViralLoad`dat'
+** Note 05Sep2016: Frank says to forget FVL for now
+drop if Data == "FVL"
 
-  preserve
-  ** We drop any missing VL
-  drop if missing(ViralLoad`dat') & HIVPositive2011==1
-  replace ViralLoad`dat' = 0 if missing(ViralLoad`dat') & HIVPositive2011==0
-  collapse (mean) ViralLoad`dat' , by(BSIntID)
+replace ViralLoad = 0 if HIVPositive2011==0
+count if missing(ViralLoad)
+drop if missing(ViralLoad)
 
-  gen Quin_`dat' = 0 if inrange(ViralLoad`dat', 0 , 1550)
-  replace Quin_`dat' = 2.5 if inrange(ViralLoad`dat', 1551, 3500) 
-  replace Quin_`dat' = 12 if inrange(ViralLoad`dat', 3501, 10000 ) 
-  replace Quin_`dat' = 13.5 if inrange(ViralLoad`dat', 10001, 50000 ) 
-  replace Quin_`dat' = 23 if ViralLoad`dat' > 50000 & !missing(ViralLoad`dat')
-  ** outsheet using "$derived\BS_`dat'.xls", replace
-  restore
-}
+collapse (mean) ViralLoad , by(BSIntID)
 
-use "$derived/PVL2011", clear 
+gen Quin = 0 if inrange(ViralLoad, 0 , 1550)
+replace Quin = 2.5 if inrange(ViralLoad, 1551, 3500) 
+replace Quin = 12 if inrange(ViralLoad, 3501, 10000 ) 
+replace Quin = 13.5 if inrange(ViralLoad, 10001, 50000 ) 
+replace Quin = 23 if ViralLoad > 50000 & !missing(ViralLoad)
 
-gen Quin_ = 0 if inrange(ViralLoad, 0 , 1550)
-replace Quin_ = 2.5 if inrange(ViralLoad, 1551, 3500) 
-replace Quin_ = 12 if inrange(ViralLoad, 3501, 10000 ) 
-replace Quin_ = 13.5 if inrange(ViralLoad, 10001, 50000 ) 
-replace Quin_ = 23 if ViralLoad > 50000 & !missing(ViralLoad)
-
-bysort Data: tab Quin_
+outsheet using "$derived\Ind_PVL_$today.xls", replace
 
 ***********************************************************************************************************
 **************************************** Quinn ************************************************************
