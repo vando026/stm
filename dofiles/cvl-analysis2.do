@@ -6,11 +6,12 @@
 ***********************************************************************************************************
 **************************************** Single Rec Data **************************************************
 ***********************************************************************************************************
-** log using "$output/FrankCompare.txt", text replace
 log using "$output/Output.txt", replace text 
 
 use "$derived/cvl-analysis2", clear
-keep if !missing(PVL_geo_me, ART_geo_me, PPDV_PVL, PPDV_FVL, PVL_Quinn_Continuous, FVL_Quinn_Continuous,PVL_Quinn_Continuous,PVL_Quinn_transmission_continuou, FVL_Quinn_transmission_continuou)
+
+** misstable sum PVL - P_TI
+keep if !missing(PVL, P_PVL, PDV, P_PDV, TI , P_TI)
 
 stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
   origin(EarliestHIVNegative) scale(365.25) exit(EndDate)
@@ -23,20 +24,21 @@ global vars "i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
 global sex_vars "Female $vars"
 
 ***********************************************************************************************************
-**************************************** Model 1 **********************************************************
+**************************************** No Negatives *****************************************************
 ***********************************************************************************************************
 
-foreach var of varlist *_unadjusted  {
+foreach var of varlist PVL PDV TI {
   dis as text _n "=========================================> Showing for `var'"
   stcox `var', noshow
   stcox `var' $prev, noshow
+  stcox `var' $vars, noshow
   stcox `var' $prev $vars, noshow
 } 
 
-foreach var of varlist PPDV_?VL {
+foreach var of varlist P_* {
   dis as text _n "=========================================> Showing for `var'"
   stcox `var', noshow
-  stcox `var' $sex_vars, noshow
+  stcox `var' $vars, noshow
 } 
 
 foreach var of varlist *Quinn_Index *Quinn_Trans* {

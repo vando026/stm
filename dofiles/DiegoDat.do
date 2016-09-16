@@ -55,6 +55,7 @@ save "`Diego'"
 ***********************************************************************************************************
 **************************************** VL data **********************************************************
 ***********************************************************************************************************
+global dropNeg = "No"
 use "`Diego'", clear
 merge m:1 IIntID using "`HIV2011'", keepusing(HIVPositive2011) nogen keep(match) 
 
@@ -64,10 +65,17 @@ merge 1:m IIntID using "$derived/PVL2011", nogen keepusing(Data ViralLoad) keep(
 drop if Data == "FVL"
 
 replace ViralLoad = 0 if HIVPositive2011==0
-count if missing(ViralLoad)
 drop if missing(ViralLoad)
 
-collapse (mean) ViralLoad , by(BSIntID)
+if "$dropNeg"=="Yes" {
+  local Dat = "PosOnly"
+  drop if ViralLoad==0
+} 
+else {
+  local Dat = "All"
+}
+
+** collapse (mean) ViralLoad mean(), by(BSIntID)
 
 gen Quin = 0 if inrange(ViralLoad, 0 , 1550)
 replace Quin = 2.5 if inrange(ViralLoad, 1551, 3500) 
@@ -75,7 +83,7 @@ replace Quin = 12 if inrange(ViralLoad, 3501, 10000 )
 replace Quin = 13.5 if inrange(ViralLoad, 10001, 50000 ) 
 replace Quin = 23 if ViralLoad > 50000 & !missing(ViralLoad)
 
-outsheet using "$derived\Ind_PVL_$today.xls", replace
+outsheet using "$derived\Ind_PVL_`Dat'_$today.xls", replace
 
 ***********************************************************************************************************
 **************************************** Quinn ************************************************************
