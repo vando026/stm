@@ -6,10 +6,11 @@
 ***********************************************************************************************************
 **************************************** Bring in Datasets*************************************************
 ***********************************************************************************************************
-import excel using "$source/Viral_load_estimation_Sept15.xls", clear firstrow 
+** log using "$output/Output_CVL_$today.txt", replace text 
+import excel using "$source/Viral_load_estimation_Sept19.xls", clear firstrow 
 
 ** I have to format vars from Diego file
-foreach var of varlist PVL_prev_v - P_TI {
+foreach var of varlist PVL_prev_v - MVL {
   ds `var', has(type string)
   if "`=r(varlist)'" != "." {
     replace `var' = "" if `var'=="NA"
@@ -20,25 +21,21 @@ foreach var of varlist PVL_prev_v - P_TI {
 ** No observations
 drop if BSIntID > 17884
 
-** we want to make this a percentage
-foreach var of varlist *_prev_v {
-  ds `var', v(20)
-  replace `var' = `var' * 100
-}
-
 ** Make HIV prev a percent
 gen HIV_prev = hiv8_2011_ * 100
 egen HIV_pcat = cut(HIV_prev), at(0, 12.5, 25, 100) icode label
 tab HIV_pcat
 
-** the geometric mean vars are large, divide by 1000
-foreach var of varlist *PVL {
+** the VL means are large, divide by 1000
+foreach var of varlist PVL *MVL {
   sum `var'
   qui replace `var' = `var'/1000
+  sum `var'
 }
 
 tempfile Point
 save "`Point'"
+** log close
 
 ***********************************************************************************************************
 **************************************** HSE **************************************************************
