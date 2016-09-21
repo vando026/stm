@@ -140,7 +140,7 @@ save "`Marital'"
 **************************************** Individuals ******************************************************
 ***********************************************************************************************************
 use "$source/RD01-01_ACDIS_Individuals", clear
-keep IIntID DateOfBirth 
+keep IIntID DateOfBirth Sex 
 duplicates drop IIntID, force
 tempfile Individuals
 save "`Individuals'"
@@ -156,19 +156,19 @@ keep if ExpYear == 2011
 
 ** Resident in BS in this year, drop if not
 drop if missing(BSIntID)
-keep IIntID BSIntID Sex ExpDays
 
 ** Drop duplicates as same BS per 1+ episode in 2011
-duplicates drop IIntID BSIntID, force
+duplicates drop IIntID BSIntID ObservationStart, force
+collapse (sum) ExpDays , by(BSIntID IIntID)
+
 bysort IIntID  : egen Count = count(BSIntID)
 tab Count
 
-/** Identify BS that ID spent most time in in 2011
+** Identify BS that ID spent most time in in 2011
 bysort IIntID : egen MaxBS = max(ExpDays)
 bysort IIntID: gen MaxBSID = BSIntID if (MaxBS==ExpDays)
-collapse (firstnm) MaxBSID Sex, by(IIntID)
+collapse (firstnm) MaxBSID , by(IIntID)
 rename MaxBSID BSIntID
-*/
 
 ** Bring in CVL, no match for BSIntId 17887
 merge m:1 BSIntID using "`Point'", keep(match) nogen 
@@ -177,7 +177,7 @@ merge m:1 BSIntID using "`Point'", keep(match) nogen
 merge m:1 IIntID using "$derived/ac-HIV_Dates_2011", keep(match) nogen
 
 ** Bring in ages. 
-merge m:1 IIntID using "`Individuals'" , keepusing(DateOfBirth) keep(match) nogen
+merge m:1 IIntID using "`Individuals'" , keep(match) nogen
 
 gen Age = round((date("01-01-2011", "DMY")-DateOfBirth)/365.25, 1)
 global ad = 12
