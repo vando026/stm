@@ -92,6 +92,9 @@ drop if EarliestHIVNegative == EndDate
 assert EarliestHIVNegative < EndDate 
 saveold "$derived/ac-HIV_Dates_2011", replace
 
+** local Mid = date("01-07-2011", "DMY")
+** local begin = date("01-01-2011", "DMY")
+** count if inrange(DateSeroConvert, `begin', `Mid')
 ** distinct IIntID 
 ** distinct IIntID if SeroConvertEvent ==1 
 

@@ -35,7 +35,6 @@ foreach var of varlist PVL *MVL {
 
 tempfile Point
 save "`Point'"
-** log close
 
 ***********************************************************************************************************
 **************************************** HSE **************************************************************
@@ -161,9 +160,6 @@ drop if missing(BSIntID)
 duplicates drop IIntID BSIntID ObservationStart, force
 collapse (sum) ExpDays , by(BSIntID IIntID)
 
-bysort IIntID  : egen Count = count(BSIntID)
-tab Count
-
 ** Identify BS that ID spent most time in in 2011
 bysort IIntID : egen MaxBS = max(ExpDays)
 bysort IIntID: gen MaxBSID = BSIntID if (MaxBS==ExpDays)
@@ -172,6 +168,7 @@ rename MaxBSID BSIntID
 
 ** Bring in CVL, no match for BSIntId 17887
 merge m:1 BSIntID using "`Point'", keep(match) nogen 
+merge m:1 BSIntID using "$source/ART Coverage and HIV prevalence by BS_final_v12", keep(match) nogen keepusing(X_2011artcoverage_1)
 
 ** Bring in surv dates
 merge m:1 IIntID using "$derived/ac-HIV_Dates_2011", keep(match) nogen
@@ -192,7 +189,7 @@ egen AgeGrp1 = cut(Age), at($ad, 20(5)45, 110) label icode
 gen Female = (Sex==2)
 
 encode(IsUrbanOrR) if IsUrbanOrR != "DFT", gen(urban)
-drop IsUrbanOrR Sex ExpDays Count
+drop IsUrbanOrR Sex 
 
 merge m:1 BSIntID using "`HSE2011'" , keep(1 3) nogen
 gen Replace = 1+int((5-1+1)*runiform())

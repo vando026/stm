@@ -10,10 +10,10 @@ log using "$output/Output$today.txt", replace text
 
 use "$derived/cvl-analysis2", clear
 
+
 ** misstable sum PVL - P_TI
 keep if !missing(MVL, P_MVL, PDV, P_PDV, TI , P_TI)
 
-sum PVL - P_TI
 
 stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
   origin(EarliestHIVNegative) scale(365.25) exit(EndDate) id(IIntID)
@@ -21,14 +21,14 @@ stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
 distinct IIntID 
 
 ** Set covariates here once, so you dont have to do it x times for x models
-global prev "i.HIV_pcat"
+global prev "i.HIV_pcat X_2011artcoverage_1"
 global vars "i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
 global sex_vars "Female $vars"
+global all "i.HIV_pcat  X_2011artcoverage_1 i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ Female"
 
 ***********************************************************************************************************
 **************************************** No Negatives *****************************************************
 ***********************************************************************************************************
-
 foreach var of varlist MVL PDV TI {
   dis as text _n "=========================================> Showing for `var'"
   stcox `var', noshow
@@ -48,9 +48,11 @@ log close
 ***********************************************************************************************************
 ***************************************** Model 1 *********************************************************
 ***********************************************************************************************************
-eststo MVL: stcox MVL $prev $sex_vars, noshow
-eststo PDV: stcox PDV $prev $sex_vars, noshow
-eststo TI: stcox TI $prev $sex_vars, noshow
+foreach mod in MVL PDV TI  {
+  eststo `mod': stcox `mod' $sex_vars, noshow
+  mat `mod' = r(table)
+  mat `mod' = `mod'[1..6,1]'
+}
 
 global opts1 "cells("b(fmt(%9.3f)) ci(par(( - ))) p") substitute(0.000 "<0.001") compress"
 global opts2 "eform varwidth(12) modelwidth(6 13 6) nonumbers nogaps replace"
@@ -64,9 +66,11 @@ esttab MVL PDV TI using "$output/Model1.`opts5'", $opts1 $opts2 $opts3 $opts4 `o
 ***********************************************************************************************************
 ***************************************** Model 2 *********************************************************
 ***********************************************************************************************************
-eststo P_MVL: stcox P_MVL $sex_vars, noshow
-eststo P_PDV: stcox P_PDV $sex_vars, noshow
-eststo P_TI: stcox P_TI $sex_vars, noshow
+foreach mod in P_MVL P_PDV P_TI  {
+  eststo `mod': stcox `mod' $sex_vars, noshow
+  mat `mod' = r(table)
+  mat `mod' = `mod'[1..6,1]'
+}
 
 global opts4 order(P_MVL P_PDV P_TI)
 esttab P_MVL P_PDV P_TI using "$output/Model2.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
@@ -103,4 +107,54 @@ foreach var of varlist HIV_pcat Female AgeGrp1 urban Marital PartnerCat AIQ {
   stptime , by(`var') per(100) dd(2)
 }
 
+stptime , per(100) dd(2)
+local fail = r(failures)
+local pyears = r(ptime)
 
+
+distinct IIntID 
+local PYLess = (r(ndistinct) * 182)/365.25
+di `PYLess'
+
+local rate = `fail'/(`pyears'-`PYLess')*100
+di `rate'
+
+foreach var of varlist MVL PDV TI P_MVL P_PDV P_TI {
+
+mat define Out = J(1, 4, .)
+foreach var of varlist PDV {
+  dis as text _n "=========== `var'"
+  cap drop `var'_q
+  egen `var'_q = xtile(`var'), n(4)
+  forvalue i = 1/4 {
+  stptime if `var'_q==`i', per(100) dd(2) 
+    mat define `var'`i' = J(1, 4, .)
+    mat rownames `var'`i' = "`var'`i'"
+    mat `var'`i'[1, 1] = `i'
+    mat `var'`i'[1,2] = r(rate) 
+    mat `var'`i'[1, 3] = r(lb)
+    mat `var'`i'[1, 4] = r(ub)
+    mat list `var'`i'
+    ** set trace on
+    mat Out = Out \ `var'`i'
+    set trace off
+  }
+}
+mat Out =  Out[2..., 1...]
+
+fat colnames Out = Q Rate lb ub
+mat2txt , matrix(Out) saving("$output/coefMat.txt") replace 
+
+  stptime , by(PDV) per(100) dd(2) 
+
+
+***********************************************************************************************************
+**************************************** For plot of coeff ************************************************
+***********************************************************************************************************
+
+
+
+mat coef = MVL \ PDV\ TI\ P_MVL\ P_PDV\ P_TI
+mat list coef
+putexcel set "$output/coefMatrix", replace
+putexcel A1=matrix(coef, names)

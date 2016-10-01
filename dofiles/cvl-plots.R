@@ -40,7 +40,7 @@ derived  =  file.path(root, "derived")
 output  =  file.path(root, "output")
 
 # Cut off UB for fem gmn plot
-gmn <- read.dta(file.path(derived, "gmean2011.dta"), convert.factors=FALSE) 
+gmn <- read.dta13(file.path(derived, "gmean2011.dta"), convert.factors=FALSE) 
 # Add to Age to offset the graph
 gmn <- transform(gmn, Age = ifelse(Data=="CVL", Age + 0.15, Age - 0.15))
 
