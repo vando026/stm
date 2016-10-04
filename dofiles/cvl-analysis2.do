@@ -25,7 +25,7 @@ global vars1 "i.AgeGrp1 Female b3.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
 foreach var of varlist MVL PDV TI {
   dis as text _n "=========================================> Showing for `var'"
   stcox `var', noshow
-  stcox `var' $previ $vars1, noshow
+  stcox `var' $vars1, noshow
   ** stcox `var' $prev $vars, noshow
 } 
 
@@ -139,6 +139,12 @@ fat colnames Out = Q Rate lb ub
 mat2txt , matrix(Out) saving("$output/coefMat.txt") replace 
 
   stptime , by(PDV) per(100) dd(2) 
+
+duplicates drop IIntID, force
+stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
+  origin(EarliestHIVNegative) scale(365.25) exit(EndDate) id(IIntID)
+
+
 
 
 ***********************************************************************************************************

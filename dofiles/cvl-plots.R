@@ -10,7 +10,7 @@ library(plotrix)
 ######################################## Functions ########################################################
 ###########################################################################################################
 Ratio <- function(Age, dat) {
-  out <- with(dat, round(mean[Age==Age & Data=="CVL"]/mean[Age==Age & Data=="FVL"], 2))
+  out <- with(dat, round(mean[Age==Age & Female==1]/mean[Age==Age & Female==0], 2))
   out
 }
 
@@ -42,7 +42,8 @@ output  =  file.path(root, "output")
 # Cut off UB for fem gmn plot
 gmn <- read.dta13(file.path(derived, "mean2011.dta"), convert.factors=FALSE) 
 # Add to Age to offset the graph
-gmn <- transform(gmn, Age = ifelse(Data=="CVL", Age + 0.15, Age - 0.15))
+gmn <- subset(gmn, Data=="CVL")
+gmn <- transform(gmn, Age = ifelse(Female==1, Age + 0.15, Age - 0.15))
 
 fem_gmn <- subset(gmn, Female==1)
 fem_gmn$Ratio <- Ratio(Age=Age, dat=fem_gmn)
@@ -58,13 +59,12 @@ men_gmn$ub <- with(men_gmn, ifelse(ub > 90000, ub - 30000, ub))
 ######################################## Make plots #######################################################
 ###########################################################################################################
 png(file=file.path(output, "VL_gmn_2011.png"), 
-  units="in", width=12, height=8, pointsize=14, res=120, type="cairo")
-par(oma=c(0.1, 3.5, 1,0.2))  
-nf <- layout(matrix(c(1,2,3,3), ncol=2, byrow=TRUE),
-  heights=c(4.0, 1.0))
-layout.show(nf)
+  units="in", width=12, height=8, pointsize=10, res=300, type="cairo")
 
-plotCVL(fem_gmn, main="Females", cex2=0.6)
+debugonce(plotCVL)
+plotCVL(gmn, main="Hello", cex2=0.6)
+
+
 axis(side=2, at = seq(0, 30000, 5000), 
   labels = formatC(c(seq(0, 25000, 5000), 40000), format="d", big.mark=" "))
 axis.break(axis=2, breakpos=27500, style = "slash", brw=0.02)
