@@ -56,10 +56,10 @@ drop if missing(BSIntID)
 collapse (sum) ExpDays , by(BSIntID IIntID)
 
 ** Identify BS that ID spent most time in in 2011
-bysort IIntID : egen MaxBS = max(ExpDays)
-bysort IIntID: gen MaxBSID = BSIntID if (MaxBS==ExpDays)
-collapse (firstnm) MaxBSID , by(IIntID)
-rename MaxBSID BSIntID
+** bysort IIntID : egen MaxBS = max(ExpDays)
+** bysort IIntID: gen MaxBSID = BSIntID if (MaxBS==ExpDays)
+** collapse (firstnm) MaxBSID , by(IIntID)
+** rename MaxBSID BSIntID
 
 tempfile MaxBS
 save "`MaxBS'" 
@@ -68,7 +68,7 @@ save "`MaxBS'"
 **************************************** Now get matches **************************************************
 ***********************************************************************************************************
 use "$derived/ac-HIV_Dates_2011", clear
-merge 1:1 IIntID using "`MaxBS'", keep(match) nogen
+merge 1:m IIntID using "`MaxBS'", keep(match) nogen
 merge m:1 BSIntID using "`Point'", keep(match) nogen 
 tempfile AllData
 save "`AllData'" 
