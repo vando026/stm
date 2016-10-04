@@ -35,7 +35,7 @@ dis as text "$today"
 do "$dofile/HIVSurveillance2011"
 
 ** This dofile prepares all the CVL and FVL data for analysis
-do "$dofile/cvl-manage"
+** do "$dofile/cvl-manage"
 
 ** This dofile prepares the data for Cox analysis
 do "$dofile/cvl-manage2"
@@ -48,3 +48,27 @@ do "$dofile/cvl-analysis2"
 
 
 
+mat TT = J(20, 2, .)
+local j = 1
+** The dofiles are to be run in the following sequence
+forvalue i = 2001/2020 {
+set seed `i'
+** This dofile prepares the repeat-tester seroconverion dates
+qui do "$dofile/HIVSurveillance2011"
+
+** This dofile prepares the data for Cox analysis
+qui do "$dofile/cvl-manage2"
+
+qui stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
+  origin(EarliestHIVNegative) scale(365.25) exit(EndDate) id(IIntID)
+
+** Set covariates here once, so you dont have to do it x times for x models
+qui stcox P_MVL i.AgeGrp1 Female b3.urban ib1.Marital ib0.PartnerCat ib1.AIQ
+
+mat T = r(table)
+mat TT[`j', 1] = `i'
+mat TT[`j', 2] = T[4, 1]
+dis as text "Iter `j'"
+local ++j
+}
+mat list TT

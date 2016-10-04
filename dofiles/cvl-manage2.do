@@ -68,7 +68,7 @@ save "`MaxBS'"
 **************************************** Now get matches **************************************************
 ***********************************************************************************************************
 use "$derived/ac-HIV_Dates_2011", clear
-merge 1:m IIntID using "`MaxBS'"
+merge 1:1 IIntID using "`MaxBS'", keep(match) nogen
 merge m:1 BSIntID using "`Point'", keep(match) nogen 
 tempfile AllData
 save "`AllData'" 
@@ -222,9 +222,8 @@ save "`Ind'"
 ***********************************************************************************************************
 **************************************** Bring in Datasets*************************************************
 ***********************************************************************************************************
-use "$derived/ac-HIV_TDates_2011", clear
+use "`AllData'", clear
 
-merge m:1 BSIntID using "`Point'", keep(match) nogen 
 merge m:1 IIntID using "`Ind'", keep(match) nogen 
 merge m:1 BSIntID using "`HSE2011'", keep(match) nogen 
 

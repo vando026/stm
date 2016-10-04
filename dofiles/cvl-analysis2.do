@@ -11,7 +11,7 @@
 use "$derived/cvl-analysis2", clear
 
 stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
-  origin(EarliestHIVNegative) scale(365.25) exit(EndDate) id(IIntID)
+  origin(EarliestHIVNegative) scale(365.25) exit(EndDate) 
 
 ** Set covariates here once, so you dont have to do it x times for x models
 global previ "i.HIV_pcat"
@@ -24,14 +24,14 @@ global vars1 "i.AgeGrp1 Female b3.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
 ***********************************************************************************************************
 foreach var of varlist MVL PDV TI {
   dis as text _n "=========================================> Showing for `var'"
-  ** stcox `var', noshow
-  stcox `var' $vars1, noshow
+  stcox `var', noshow
+  stcox `var' $previ $vars1, noshow
   ** stcox `var' $prev $vars, noshow
 } 
 
 foreach var of varlist P_MVL P_PDV P_TI {
   dis as text _n "=========================================> Showing for `var'"
-  ** stcox `var', noshow
+  stcox `var', noshow
   ** stcox `var' $previ $vars1, noshow
   stcox `var' $vars1, noshow
 } 
