@@ -6,17 +6,10 @@
 ***********************************************************************************************************
 **************************************** Bring in Datasets*************************************************
 ***********************************************************************************************************
-** log using "$output/Output_CVL_$today.txt", replace text 
-import excel using "$source/Viral load estimation Aug23.xls", clear firstrow 
-keep BSIntID PVL_unadjusted
-tempfile Test
-save "`Test'" 
-
 import excel using "$source/Viral_load_estimation_Sept19.xls", clear firstrow 
-merge 1:1 BSIntID using "`Test'", nogen
 
 ** I have to format vars from Diego file
-foreach var of varlist PVL_unadjusted PVL_prev_v - MVL {
+foreach var of varlist PVL_prev_v - MVL {
   ds `var', has(type string)
   if "`=r(varlist)'" != "." {
     replace `var' = "" if `var'=="NA"
@@ -33,16 +26,64 @@ egen HIV_pcat = cut(HIV_prev), at(0, 12.5, 25, 100) icode label
 tab HIV_pcat
 
 ** the VL means are large, divide by 1000
-foreach var of varlist PVL_unadjusted PVL *MVL {
+foreach var of varlist PVL *MVL {
   sum `var'
   qui replace `var' = `var'/1000
   sum `var'
 }
 
-keep BSIntID IsUrbanOrR PVL_unadjusted PDV - HIV_pcat
+encode(IsUrbanOrR) , gen(urban)
+gen urban_rc = cond(urban==2, 0, 1)
+keep BSIntID urban* PDV - HIV_pcat
 
 tempfile Point
 save "`Point'"
+
+
+***********************************************************************************************************
+****************************************  Get BS for 2011 *************************************************
+***********************************************************************************************************
+** Bring in linked Demography data
+use "$source/RD02-002_Demography", clear
+
+** Dont need any obs other than 2011
+keep if ExpYear == 2011
+
+** Resident in BS in this year, drop if not
+drop if missing(BSIntID)
+
+** Drop duplicates as same BS per 1+ episode in 2011
+collapse (sum) ExpDays , by(BSIntID IIntID)
+
+** Identify BS that ID spent most time in in 2011
+bysort IIntID : egen MaxBS = max(ExpDays)
+bysort IIntID: gen MaxBSID = BSIntID if (MaxBS==ExpDays)
+collapse (firstnm) MaxBSID , by(IIntID)
+rename MaxBSID BSIntID
+
+tempfile MaxBS
+save "`MaxBS'" 
+
+***********************************************************************************************************
+**************************************** Now get matches **************************************************
+***********************************************************************************************************
+use "$derived/ac-HIV_Dates_2011", clear
+merge 1:m IIntID using "`MaxBS'"
+merge m:1 BSIntID using "`Point'", keep(match) nogen 
+tempfile AllData
+save "`AllData'" 
+preserve
+  duplicates drop BSIntID, force
+  keep BSIntID
+  tempfile AllBSIntID
+  save "`AllBSIntID'" 
+restore
+preserve
+  duplicates drop IIntID, force
+  keep IIntID
+  tempfile AllIIntID
+  save "`AllIIntID'" 
+restore
 
 ***********************************************************************************************************
 **************************************** HSE **************************************************************
@@ -65,6 +106,10 @@ use "$source\HSE`year'", clear
     tempfile HSE`year'
     save "`HSE`year''" 
 }
+
+***********************************************************************************************************
+***********************************************************************************************************
+***********************************************************************************************************
 ** use a loop to append each dataset into one
 use "`HSE2009'", clear
 append using "`HSE2010'" 
@@ -72,17 +117,36 @@ append using "`HSE2011'"
 append using "`HSE2012'" 
 
 duplicates drop BSIntID ExpYear AssetIndexQuintile , force
+
 bysort BSIntID: egen HSE_mn = mean(AssetIndexQuintile)
 replace AssetIndexQuintile = round(HSE_mn, 1) if missing(AssetIndexQuintile)
 rename AssetIndexQuintile AIQ
 keep if ExpYear==2011
 duplicates drop BSIntID, force
 keep BSIntID AIQ
+
+merge 1:1 BSIntID using "`AllBSIntID'", keep(2 3) nogen 
+set seed 2000000
+gen Replace = 1+int((5-1+1)*runiform())
+replace AIQ = Replace if missing(AIQ)
+drop Replace
 tempfile HSE2011
 save "`HSE2011'" 
 
+
 ***********************************************************************************************************
+******************************************* Individuals ***************************************************
 ***********************************************************************************************************
+use "$source/RD01-01_ACDIS_Individuals", clear
+gen Age = round((date("01-01-2011", "DMY")-DateOfBirth)/365.25, 1)
+duplicates drop IIntID, force
+tempfile Individuals
+gen Female = (Sex==2)
+keep IIntID Age Female 
+save "`Individuals'"
+
+***********************************************************************************************************
+************************************** Partners Marital ***************************************************
 ***********************************************************************************************************
 use "$source\MGH_Contacts2004to12", clear
 append using "$source\WGH_Contacts2004to12"
@@ -139,54 +203,30 @@ egen PartnerCat = cut(Partners), at(0, 1, 2, 100)
 tab Partners PartnerCat, miss
 tab PartnerCat 
 
-drop Partners
-tempfile Marital
-save "`Marital'" 
+merge m:1 IIntID using "`Individuals'", keep(2 3) nogen
+merge m:1 IIntID using "`AllIIntID'", keep(2 3) nogen
+
+replace Marital = 1 if missing(Marital) & Age < 18
+** Ok randomly replace with 1-3
+set seed 2000000
+gen Replace = 1+int((3-1+1)*runiform())
+replace Marital = Replace if missing(Marital)
+tab Marital , miss
+replace PartnerCat = 0 if missing(PartnerCat) & Age < 18
+set seed 2000000
+replace PartnerCat = rbinomial(2, 0.5) if missing(PartnerCat)
+drop Replace Partners
+tempfile Ind
+save "`Ind'" 
 
 ***********************************************************************************************************
-**************************************** Individuals ******************************************************
+**************************************** Bring in Datasets*************************************************
 ***********************************************************************************************************
-use "$source/RD01-01_ACDIS_Individuals", clear
-keep IIntID DateOfBirth Sex 
-duplicates drop IIntID, force
-tempfile Individuals
-save "`Individuals'"
+use "$derived/ac-HIV_TDates_2011", clear
 
-***********************************************************************************************************
-**************************************** Demography *******************************************************
-***********************************************************************************************************
-** Bring in linked Demography data
-use "$source/RD02-002_Demography", clear
-
-** Dont need any obs other than 2011
-keep if ExpYear == 2011
-
-** Resident in BS in this year, drop if not
-drop if missing(BSIntID)
-
-** Drop duplicates as same BS per 1+ episode in 2011
-duplicates drop IIntID BSIntID ObservationStart, force
-collapse (sum) ExpDays , by(BSIntID IIntID)
-
-** Identify BS that ID spent most time in in 2011
-bysort IIntID : egen MaxBS = max(ExpDays)
-bysort IIntID: gen MaxBSID = BSIntID if (MaxBS==ExpDays)
-collapse (firstnm) MaxBSID , by(IIntID)
-rename MaxBSID BSIntID
-
-** Bring in CVL, no match for BSIntId 17887
 merge m:1 BSIntID using "`Point'", keep(match) nogen 
-
-** Bring in surv dates
-merge m:1 IIntID using "$derived/ac-HIV_Dates_2011", keep(match) nogen
-
-** Bring in ages. 
-merge m:1 IIntID using "`Individuals'" , keep(match) nogen
-
-** Make new AgeSex Var
-gen Female = (Sex==2)
-
-gen Age = round((date("01-01-2011", "DMY")-DateOfBirth)/365.25, 1)
+merge m:1 IIntID using "`Ind'", keep(match) nogen 
+merge m:1 BSIntID using "`HSE2011'", keep(match) nogen 
 
 gen Keep = . 
 replace Keep = 1 if inrange(Age, 15, 55) & Female == 0
@@ -194,22 +234,10 @@ replace Keep = 1 if inrange(Age, 15, 50) & Female == 1
 keep if Keep == 1
 
 ** Make Age Category 
-egen AgeGrp1 = cut(Age), at(15, 20(5)45, 110) label icode
+egen AgeGrp1 = cut(Age), at(15(5)100) label icode
 
-encode(IsUrbanOrR) if IsUrbanOrR != "DFT", gen(urban)
-drop IsUrbanOrR Sex 
+keep if !missing(MVL, P_MVL, PDV, P_PDV, TI , P_TI)
 
-merge m:1 BSIntID using "`HSE2011'" , keep(1 3) nogen
-gen Replace = 1+int((5-1+1)*runiform())
-replace AIQ = Replace if missing(AIQ)
-drop Replace
-merge m:1 IIntID using "`Marital'", keep(1 3) //nogen
-replace Marital = 1 if missing(Marital) & Age < 18
-** Ok randomly replace with 1-3
-gen Replace = 1+int((3-1+1)*runiform())
-replace Marital = Replace if missing(Marital)
-tab Marital , miss
-replace PartnerCat = 0 if missing(PartnerCat) & Age < 18
-replace PartnerCat = rbinomial(2, 0.5) if missing(PartnerCat)
 saveold "$derived/cvl-analysis2", replace
 
+** Bring in surv dates

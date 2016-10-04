@@ -75,7 +75,7 @@ drop if year(EarliestHIVPositive) < 2011
 gen SeroConvertEvent = !missing(EarliestHIVPositive)
 
 ** To draw a random seroconversion date between latest HIV negative and Earliest HIV positive. 
-set seed `i'
+set seed 200
 gen DateSeroConvert = int((EarliestHIVPositive - LatestHIVNegative)*runiform() + LatestHIVNegative) if SeroConvertEvent==1
 format DateSeroConvert %td
 assert inrange(DateSeroConvert, LatestHIVNegative, EarliestHIVPositive) if SeroConvertEvent==1
@@ -91,10 +91,4 @@ drop LatestHIVNegative
 drop if EarliestHIVNegative == EndDate 
 assert EarliestHIVNegative < EndDate 
 saveold "$derived/ac-HIV_Dates_2011", replace
-
-** local Mid = date("01-07-2011", "DMY")
-** local begin = date("01-01-2011", "DMY")
-** count if inrange(DateSeroConvert, `begin', `Mid')
-** distinct IIntID 
-** distinct IIntID if SeroConvertEvent ==1 
 

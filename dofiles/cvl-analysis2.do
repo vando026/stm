@@ -10,15 +10,8 @@
 
 use "$derived/cvl-analysis2", clear
 
-
-** misstable sum PVL - P_TI
-keep if !missing(MVL, P_MVL, PDV, P_PDV, TI , P_TI)
-
-
 stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
   origin(EarliestHIVNegative) scale(365.25) exit(EndDate) id(IIntID)
-
-distinct IIntID 
 
 ** Set covariates here once, so you dont have to do it x times for x models
 global previ "i.HIV_pcat"
