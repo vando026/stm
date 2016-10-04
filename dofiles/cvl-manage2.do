@@ -7,10 +7,16 @@
 **************************************** Bring in Datasets*************************************************
 ***********************************************************************************************************
 ** log using "$output/Output_CVL_$today.txt", replace text 
+import excel using "$source/Viral load estimation Aug23.xls", clear firstrow 
+keep BSIntID PVL_unadjusted
+tempfile Test
+save "`Test'" 
+
 import excel using "$source/Viral_load_estimation_Sept19.xls", clear firstrow 
+merge 1:1 BSIntID using "`Test'", nogen
 
 ** I have to format vars from Diego file
-foreach var of varlist PVL_prev_v - MVL {
+foreach var of varlist PVL_unadjusted PVL_prev_v - MVL {
   ds `var', has(type string)
   if "`=r(varlist)'" != "." {
     replace `var' = "" if `var'=="NA"
@@ -27,13 +33,13 @@ egen HIV_pcat = cut(HIV_prev), at(0, 12.5, 25, 100) icode label
 tab HIV_pcat
 
 ** the VL means are large, divide by 1000
-foreach var of varlist PVL *MVL {
+foreach var of varlist PVL_unadjusted PVL *MVL {
   sum `var'
   qui replace `var' = `var'/1000
   sum `var'
 }
 
-keep BSIntID IsUrbanOrR PDV - HIV_pcat
+keep BSIntID IsUrbanOrR PVL_unadjusted PDV - HIV_pcat
 
 tempfile Point
 save "`Point'"

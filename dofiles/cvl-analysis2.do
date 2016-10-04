@@ -32,15 +32,15 @@ global vars1 "i.AgeGrp1 Female b3.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
 foreach var of varlist MVL PDV TI {
   dis as text _n "=========================================> Showing for `var'"
   ** stcox `var', noshow
-  ** stcox `var' $vars, noshow
-  stcox `var' $prev $vars, noshow
+  stcox `var' $vars1, noshow
+  ** stcox `var' $prev $vars, noshow
 } 
 
 foreach var of varlist P_MVL P_PDV P_TI {
   dis as text _n "=========================================> Showing for `var'"
   ** stcox `var', noshow
   ** stcox `var' $previ $vars1, noshow
-  stcox `var' $prev $vars, noshow
+  stcox `var' $vars1, noshow
 } 
 
 log close
