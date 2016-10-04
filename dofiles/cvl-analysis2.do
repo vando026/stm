@@ -6,7 +6,7 @@
 ***********************************************************************************************************
 **************************************** Single Rec Data **************************************************
 ***********************************************************************************************************
-log using "$output/Output$today.txt", replace text 
+** log using "$output/Output$today.txt", replace text 
 
 use "$derived/cvl-analysis2", clear
 
@@ -21,26 +21,26 @@ stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
 distinct IIntID 
 
 ** Set covariates here once, so you dont have to do it x times for x models
-global prev "i.HIV_pcat X_2011artcoverage_1"
-global vars "i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
-global sex_vars "Female $vars"
-global all "i.HIV_pcat  X_2011artcoverage_1 i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ Female"
+global previ "i.HIV_pcat"
+global prev "c.HIV_prev#c.urban"
+global vars "i.AgeGrp1 Female ib1.Marital ib0.PartnerCat ib1.AIQ"
+global vars1 "i.AgeGrp1 Female b3.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
 
 ***********************************************************************************************************
 **************************************** No Negatives *****************************************************
 ***********************************************************************************************************
 foreach var of varlist MVL PDV TI {
   dis as text _n "=========================================> Showing for `var'"
-  stcox `var', noshow
-  stcox `var' $prev, noshow
-  stcox `var' $vars, noshow
+  ** stcox `var', noshow
+  ** stcox `var' $vars, noshow
   stcox `var' $prev $vars, noshow
 } 
 
 foreach var of varlist P_MVL P_PDV P_TI {
   dis as text _n "=========================================> Showing for `var'"
-  stcox `var', noshow
-  stcox `var' $vars, noshow
+  ** stcox `var', noshow
+  ** stcox `var' $previ $vars1, noshow
+  stcox `var' $prev $vars, noshow
 } 
 
 log close

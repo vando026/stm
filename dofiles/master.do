@@ -41,7 +41,7 @@ do "$dofile/cvl-manage"
 do "$dofile/cvl-manage2"
 
 ** This dofile prepares the graphs (note it relies on an adofile)
-do "$dofile/cvl-analysis"
+** do "$dofile/cvl-analysis"
 
 ** This dofile does Cox models
 do "$dofile/cvl-analysis2"

@@ -33,6 +33,8 @@ foreach var of varlist PVL *MVL {
   sum `var'
 }
 
+keep BSIntID IsUrbanOrR PDV - HIV_pcat
+
 tempfile Point
 save "`Point'"
 
@@ -168,7 +170,6 @@ rename MaxBSID BSIntID
 
 ** Bring in CVL, no match for BSIntId 17887
 merge m:1 BSIntID using "`Point'", keep(match) nogen 
-merge m:1 BSIntID using "$source/ART Coverage and HIV prevalence by BS_final_v12", keep(match) nogen keepusing(X_2011artcoverage_1)
 
 ** Bring in surv dates
 merge m:1 IIntID using "$derived/ac-HIV_Dates_2011", keep(match) nogen
@@ -176,17 +177,18 @@ merge m:1 IIntID using "$derived/ac-HIV_Dates_2011", keep(match) nogen
 ** Bring in ages. 
 merge m:1 IIntID using "`Individuals'" , keep(match) nogen
 
-gen Age = round((date("01-01-2011", "DMY")-DateOfBirth)/365.25, 1)
-global ad = 12
-drop if Age < $ad
-
-** Make Age Category 
-egen AgeGrp = cut(Age), at($ad, 20(5)90, 110) label icode
-** Make this for AgeSex var
-egen AgeGrp1 = cut(Age), at($ad, 20(5)45, 110) label icode
-
 ** Make new AgeSex Var
 gen Female = (Sex==2)
+
+gen Age = round((date("01-01-2011", "DMY")-DateOfBirth)/365.25, 1)
+
+gen Keep = . 
+replace Keep = 1 if inrange(Age, 15, 55) & Female == 0
+replace Keep = 1 if inrange(Age, 15, 55) & Female == 1
+keep if Keep == 1
+
+** Make Age Category 
+egen AgeGrp1 = cut(Age), at(15, 20(5)45, 110) label icode
 
 encode(IsUrbanOrR) if IsUrbanOrR != "DFT", gen(urban)
 drop IsUrbanOrR Sex 
