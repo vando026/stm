@@ -184,7 +184,7 @@ gen Age = round((date("01-01-2011", "DMY")-DateOfBirth)/365.25, 1)
 
 gen Keep = . 
 replace Keep = 1 if inrange(Age, 15, 55) & Female == 0
-replace Keep = 1 if inrange(Age, 15, 55) & Female == 1
+replace Keep = 1 if inrange(Age, 15, 50) & Female == 1
 keep if Keep == 1
 
 ** Make Age Category 
