@@ -15,6 +15,8 @@ bysort Data: ameans ViralLoad
 bysort Data: sum VLSuppressed
 ** bysort Data: tab OnART 
 
+gen Over50k = (ViralLoad>50000)
+
 ** Look at indiv only on ART
 ** drop if OnART == 1 
 
@@ -27,6 +29,9 @@ statsby mean=r(mean) lb=r(lb) ub=r(ub), by(Data Female Age) saving("$derived/mea
   
 statsby mean=r(p50) lb=r(p25) ub=r(p75), by(Data Female Age) saving("$derived/med2011", replace): /// 
   sum ViralLoad , detail
+
+statsby mean=r(mean) lb=r(lb) ub=r(ub), by(Data Female Age) saving("$derived/over50_2011", replace): /// 
+  ci Over50k 
 
 foreach dat in gmean2011 mean2011 med2011 {
   use "$derived/`dat'", clear

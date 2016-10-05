@@ -64,6 +64,9 @@ merge 1:m IIntID using "$derived/PVL2011", nogen keepusing(Data ViralLoad) keep(
 ** Note 05Sep2016: Frank says to forget FVL for now
 drop if Data == "FVL"
 
+** This gives number of negs and pos tested in 2011
+tab HIVPositive2011
+
 replace ViralLoad = 0 if HIVPositive2011==0
 drop if missing(ViralLoad)
 

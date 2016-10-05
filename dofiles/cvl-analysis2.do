@@ -10,14 +10,13 @@
 
 use "$derived/cvl-analysis2", clear
 
+gen ID = _n
 stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
-  origin(EarliestHIVNegative) scale(365.25) exit(EndDate) 
+  origin(EarliestHIVNegative) scale(365.25) exit(EndDate) id(ID)
 
 ** Set covariates here once, so you dont have to do it x times for x models
-global previ "i.HIV_pcat"
-global prev "c.HIV_prev#c.urban"
-global vars "i.AgeGrp1 Female ib1.Marital ib0.PartnerCat ib1.AIQ"
-global vars1 "i.AgeGrp1 Female b3.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
+global prev "i.HIV_pcat"
+global vars "Female i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
 
 ***********************************************************************************************************
 **************************************** No Negatives *****************************************************
@@ -25,7 +24,7 @@ global vars1 "i.AgeGrp1 Female b3.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
 foreach var of varlist MVL PDV TI {
   dis as text _n "=========================================> Showing for `var'"
   stcox `var', noshow
-  stcox `var' $vars1, noshow
+  stcox `var' $prev $vars, noshow
   ** stcox `var' $prev $vars, noshow
 } 
 
@@ -42,7 +41,7 @@ log close
 ***************************************** Model 1 *********************************************************
 ***********************************************************************************************************
 foreach mod in MVL PDV TI  {
-  eststo `mod': stcox `mod' $sex_vars, noshow
+  eststo `mod': stcox `mod' $prev $vars, noshow
   mat `mod' = r(table)
   mat `mod' = `mod'[1..6,1]'
 }
@@ -60,7 +59,7 @@ esttab MVL PDV TI using "$output/Model1.`opts5'", $opts1 $opts2 $opts3 $opts4 `o
 ***************************************** Model 2 *********************************************************
 ***********************************************************************************************************
 foreach mod in P_MVL P_PDV P_TI  {
-  eststo `mod': stcox `mod' $sex_vars, noshow
+  eststo `mod': stcox `mod' $vars, noshow
   mat `mod' = r(table)
   mat `mod' = `mod'[1..6,1]'
 }
@@ -71,15 +70,15 @@ esttab P_MVL P_PDV P_TI using "$output/Model2.`opts5'", $opts1 $opts2 $opts3 $op
 ***********************************************************************************************************
 **************************************** Compare model fit ************************************************
 ***********************************************************************************************************
-eststo MVL_np: stcox MVL  $sex_vars, noshow
-eststo PDV_np: stcox PDV  $sex_vars, noshow
-eststo  TI_np: stcox TI $sex_vars, noshow
+foreach var of varlist MVL PDV TI {
+  eststo `var'_np: stcox `var'  $vars, noshow
+} 
 
 ** Compute AIC = -2ln L + 2(k+c), k is model parameters
 mat AIC = J(9, 1, .)
 ** Get the model with no HIV prevalence
 local i = 1
-foreach mod in MVL MVL_np PDV PDV_np TI TI_np {
+foreach mod in  MVL_np PDV_np TI_np MVL PDV TI {
   dis as text "=========== Showing AIC for `mod'"
   est restore `mod'
   mat AIC[`i', 1] = -2*`=e(ll)' + 2*(`=e(df_m)' + 1)
@@ -92,6 +91,9 @@ lrtest  PDV PDV_np, force
 mat AIC[8, 1] = r(p)
 lrtest TI TI_np, force
 mat AIC[9, 1] = r(p)
+mat list AIC
+mat AIC1 = (AIC[1..3, 1] , AIC[4..6, 1], AIC[7..9, 1])
+mat list AIC1
 
 ***********************************************************************************************************
 **************************************** Table 2 incidence ************************************************

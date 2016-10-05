@@ -32,9 +32,10 @@ foreach var of varlist PVL *MVL {
   sum `var'
 }
 
-encode(IsUrbanOrR) , gen(urban)
+encode(IsUrbanOrR) , gen(urban_ec)
+recode urban_ec (2=1) (1=2) (3=3), gen(urban)
 gen urban_rc = cond(urban==2, 0, 1)
-keep BSIntID urban* PDV - HIV_pcat
+keep BSIntID urban urban_rc PDV - HIV_pcat
 
 tempfile Point
 save "`Point'"
@@ -233,7 +234,7 @@ replace Keep = 1 if inrange(Age, 15, 50) & Female == 1
 keep if Keep == 1
 
 ** Make Age Category 
-egen AgeGrp1 = cut(Age), at(15(5)100) label icode
+egen AgeGrp1 = cut(Age), at(15(5)45, 100) label icode
 
 keep if !missing(MVL, P_MVL, PDV, P_PDV, TI , P_TI)
 
