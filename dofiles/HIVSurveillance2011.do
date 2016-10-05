@@ -84,9 +84,10 @@ assert inrange(DateSeroConvert, LatestHIVNegative, EarliestHIVPositive) if SeroC
 drop if year(DateSeroConvert) < 2011 & !missing(SeroConvertEvent)
 
 gen EndDate = cond(SeroConvertEvent==1, DateSeroConvert, LatestHIVNegative)
-format EndDate %td
+gen EndDateRC = cond(missing(EarliestHIVPositive), LatestHIVNegative, EarliestHIVPositive)
+format EndDate* %td
 replace EarliestHIVNegative = date("01-01-2011", "DMY")
-drop LatestHIVNegative
+drop LatestHIVNegative EarliestHIVPositive
 
 drop if EarliestHIVNegative == EndDate 
 assert EarliestHIVNegative < EndDate 

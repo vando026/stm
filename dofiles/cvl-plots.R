@@ -104,22 +104,6 @@ legend("topright",
 dev.off()
 
 
-
-
-
-
-
-plotCVL(men50, main="Males", ylim2=1)
-axis(side=2, at = seq(0, 0.8, 0.2), label=TRUE)
-
-plot(1,1,type="n", xlab='', ylab='', axes=FALSE)
-  
-mtext("Proportion viral load >50000 copies/ml", line=2, 
-  cex=1, side=2, outer=TRUE, at=0.6)
-
-mtext("Age", line=-6, side=1, outer=TRUE, at=0.48, cex=1)
-dev.off()
-
 ###########################################################################################################
 ###################  WARNING MAKE SURE THIS IS THE NO ART DATASET #########################################
 ###########################################################################################################

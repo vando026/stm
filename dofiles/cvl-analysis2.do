@@ -99,25 +99,13 @@ mat list AIC1
 **************************************** Table 2 incidence ************************************************
 ***********************************************************************************************************
 foreach var of varlist HIV_pcat Female AgeGrp1 urban Marital PartnerCat AIQ {
-  stptime , by(`var') per(100) dd(2)
+  stptime , by(`var') per(100) dd(2) output(`var', replace)
 }
 
-stptime , per(100) dd(2)
-local fail = r(failures)
-local pyears = r(ptime)
 
-
-distinct IIntID 
-local PYLess = (r(ndistinct) * 182)/365.25
-di `PYLess'
-
-local rate = `fail'/(`pyears'-`PYLess')*100
-di `rate'
-
-foreach var of varlist MVL PDV TI P_MVL P_PDV P_TI {
 
 mat define Out = J(1, 4, .)
-foreach var of varlist PDV {
+foreach var of varlist MVL PDV TI P_MVL P_PDV P_TI {
   dis as text _n "=========== `var'"
   cap drop `var'_q
   egen `var'_q = xtile(`var'), n(4)
@@ -130,23 +118,12 @@ foreach var of varlist PDV {
     mat `var'`i'[1, 3] = r(lb)
     mat `var'`i'[1, 4] = r(ub)
     mat list `var'`i'
-    ** set trace on
     mat Out = Out \ `var'`i'
-    set trace off
   }
 }
 mat Out =  Out[2..., 1...]
-
-fat colnames Out = Q Rate lb ub
+mat colnames Out = Q Rate lb ub
 mat2txt , matrix(Out) saving("$output/coefMat.txt") replace 
-
-  stptime , by(PDV) per(100) dd(2) 
-
-duplicates drop IIntID, force
-stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
-  origin(EarliestHIVNegative) scale(365.25) exit(EndDate) id(IIntID)
-
-
 
 
 ***********************************************************************************************************
