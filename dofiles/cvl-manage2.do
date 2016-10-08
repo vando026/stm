@@ -57,10 +57,10 @@ drop if missing(BSIntID)
 collapse (sum) ExpDays , by(BSIntID IIntID)
 
 ** Identify BS that ID spent most time in in 2011
-** bysort IIntID : egen MaxBS = max(ExpDays)
-** bysort IIntID: gen MaxBSID = BSIntID if (MaxBS==ExpDays)
-** collapse (firstnm) MaxBSID , by(IIntID)
-** rename MaxBSID BSIntID
+bysort IIntID : egen MaxBS = max(ExpDays)
+bysort IIntID: gen MaxBSID = BSIntID if (MaxBS==ExpDays)
+collapse (firstnm) MaxBSID , by(IIntID)
+rename MaxBSID BSIntID
 
 tempfile MaxBS
 save "`MaxBS'" 
@@ -232,6 +232,7 @@ gen Keep = .
 replace Keep = 1 if inrange(Age, 15, 55) & Female == 0
 replace Keep = 1 if inrange(Age, 15, 50) & Female == 1
 keep if Keep == 1
+drop Keep
 
 ** Make Age Category 
 egen AgeGrp1 = cut(Age), at(15(5)45, 100) label icode
