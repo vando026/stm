@@ -65,7 +65,7 @@ use "`HIVDat'", clear
 ** IE The repeat tester is right censored before start of study
 drop if year(LatestHIVNegative) < 2011 & missing(EarliestHIVPositive)
 ** Tolerence for latest HIV neg date if positive
-drop if year(LatestHIVNegative) < 2010 & !missing(EarliestHIVPositive)
+** drop if year(LatestHIVNegative) < 2010 & !missing(EarliestHIVPositive)
 
 ** If any positives prior to 2011 drop
 ** IE The repeat tester is right censored before start of study
@@ -77,12 +77,12 @@ drop if year(EarliestHIVPositive) < 2011
 gen SeroConvertEvent = !missing(EarliestHIVPositive)
 scalar StartTime = date("01-01-2011", "DMY")
 replace EarliestHIVNegative = StartTime 
-replace LatestHIVNegative = StartTime if (LatestHIVNegative < StartTime) & SeroConvertEvent==1
 
 ** To draw a random seroconversion date between latest HIV negative and Earliest HIV positive. 
 set seed 2011
 gen DateSeroConvert = int((EarliestHIVPositive - LatestHIVNegative)*runiform() + LatestHIVNegative) if SeroConvertEvent==1
 format DateSeroConvert %td
+drop if DateSeroConvert < StartTime & SeroConvertEvent==1
 assert inrange(DateSeroConvert, LatestHIVNegative, EarliestHIVPositive) if SeroConvertEvent==1
 
 gen EndDate = cond(SeroConvertEvent==1, DateSeroConvert, LatestHIVNegative)
