@@ -6,11 +6,12 @@
 ***********************************************************************************************************
 **************************************** Bring in Datasets*************************************************
 ***********************************************************************************************************
-import excel using "$source/Viral_load_estimation_Sept19.xls", clear firstrow 
+** This brings in the FVL data
+import excel using "$source/Viral_load_estimation_Oct10.xls", clear firstrow 
 
 ** I have to format vars from Diego file
-foreach var of varlist PVL_prev_v - MVL {
-  ds `var', has(type string)
+foreach var of varlist PVL_prev_v - FVL_TI {
+  qui ds `var', has(type string)
   if "`=r(varlist)'" != "." {
     replace `var' = "" if `var'=="NA"
     destring `var', replace
@@ -26,7 +27,7 @@ egen HIV_pcat = cut(HIV_prev), at(0, 12.5, 25, 100) icode label
 tab HIV_pcat
 
 ** the VL means are large, divide by 1000
-foreach var of varlist PVL *MVL {
+foreach var of varlist P_MVL MVL FVL {
   sum `var'
   qui replace `var' = `var'/1000
   sum `var'
@@ -237,7 +238,7 @@ drop Keep
 ** Make Age Category 
 egen AgeGrp1 = cut(Age), at(15(5)45, 100) label icode
 
-keep if !missing(MVL, P_MVL, PDV, P_PDV, TI , P_TI)
+keep if !missing(MVL, P_MVL, PDV, P_PDV, TI , P_TI, FVL_PDV , FVL_TI, FVL)
 
 saveold "$derived/cvl-analysis2", replace
 
