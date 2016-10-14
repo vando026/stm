@@ -6,7 +6,7 @@
 ***********************************************************************************************************
 **************************************** Single Rec Data **************************************************
 ***********************************************************************************************************
-** log using "$output/Output$today.txt", replace text 
+log using "$output/Output$today.txt", replace text 
 use "$derived/cvl-analysis2", clear
 
 gen ID = _n
@@ -15,7 +15,7 @@ stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
 
 ** Set covariates here once, so you dont have to do it x times for x models
 global prev "i.HIV_pcat"
-** global vars "Female i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
+global urban "ib1.urban"
 global vars "Female i.AgeGrp1 ib1.Marital ib0.PartnerCat ib1.AIQ"
 
 ***********************************************************************************************************
@@ -26,13 +26,17 @@ foreach var of varlist MVL PDV TI {
   stcox `var', noshow
   stcox `var' $vars, noshow
   stcox `var' $prev $vars, noshow
+  stcox `var' $urban $vars, noshow
+  stcox `var' $urban $prev $vars, noshow
 } 
 
 foreach var of varlist P_MVL P_PDV P_TI {
   dis as text _n "=========================================> Showing for `var'"
   stcox `var', noshow
-  ** stcox `var' $previ $vars1, noshow
   stcox `var' $vars, noshow
+  stcox `var' $prev $vars, noshow
+  stcox `var' $urban $vars, noshow
+  stcox `var' $urban $prev $vars, noshow
 } 
 
 log close

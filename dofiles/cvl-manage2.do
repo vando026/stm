@@ -7,7 +7,7 @@
 **************************************** Bring in Datasets*************************************************
 ***********************************************************************************************************
 ** This brings in the FVL data
-import excel using "$source/Viral_load_estimation_Oct10.xls", clear firstrow 
+import excel using "$source/Viral_load_estimation_Oct12.xls", clear firstrow 
 
 ** I have to format vars from Diego file
 foreach var of varlist PVL_prev_v - FVL_TI {
@@ -22,8 +22,8 @@ foreach var of varlist PVL_prev_v - FVL_TI {
 drop if BSIntID > 17884
 
 ** Make HIV prev a percent
-gen HIV_prev = hiv8_2011_ * 100
-egen HIV_pcat = cut(HIV_prev), at(0, 12.5, 25, 100) icode label
+** gen HIV_prev = hiv8_2011_ * 100
+egen HIV_pcat = cut(HIV_Prev), at(0, 12.5, 25, 100) icode label
 tab HIV_pcat
 
 ** the VL means are large, divide by 1000

@@ -65,7 +65,7 @@ use "`HIVDat'", clear
 ** IE The repeat tester is right censored before start of study
 drop if year(LatestHIVNegative) < 2011 & missing(EarliestHIVPositive)
 ** Tolerence for latest HIV neg date if positive
-** drop if year(LatestHIVNegative) < 2010 & !missing(EarliestHIVPositive)
+** drop if year(LatestHIVNegative) < 2009 & !missing(EarliestHIVPositive)
 
 ** If any positives prior to 2011 drop
 ** IE The repeat tester is right censored before start of study

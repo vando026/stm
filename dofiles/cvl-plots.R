@@ -16,7 +16,7 @@ Ratio <- function(Age, dat) {
 
 # Rpar <- par(no.readonly = TRUE)
 cols <- c('dodgerblue4', 'indianred4')
-plotCVL <- function(dat, main, ylim2, ylab2="") {
+plotCVL <- function(dat, main, cols, ylim2, ylab2="") {
   
   # Make labels
   len <- length(unique(dat$Age))/2
