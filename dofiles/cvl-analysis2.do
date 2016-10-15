@@ -117,26 +117,27 @@ foreach var of varlist HIV_pcat Female AgeGrp1 urban Marital PartnerCat AIQ {
 }
 
 
-
-mat define Out = J(1, 4, .)
+mat define Out = J(1, 5, .)
 foreach var of varlist MVL PDV TI P_MVL P_PDV P_TI {
   dis as text _n "=========== `var'"
   cap drop `var'_q
   egen `var'_q = xtile(`var'), n(4)
-  forvalue i = 1/4 {
-  stptime if `var'_q==`i', per(100) dd(2) 
-    mat define `var'`i' = J(1, 4, .)
-    mat rownames `var'`i' = "`var'`i'"
-    mat `var'`i'[1, 1] = `i'
-    mat `var'`i'[1,2] = r(rate) 
-    mat `var'`i'[1, 3] = r(lb)
-    mat `var'`i'[1, 4] = r(ub)
-    mat list `var'`i'
-    mat Out = Out \ `var'`i'
+  forvalue m = 0/1 {
+    forvalue i = 1/4 {
+    qui stptime if `var'_q==`i' & Female==`m', per(100) dd(2) 
+      mat define `var'`i' = J(1, 5, .)
+      mat rownames `var'`i' = "`var'`i'`m'"
+      mat `var'`i'[1, 1] = `i'
+      mat `var'`i'[1, 2] = `m'
+      mat `var'`i'[1, 3] = r(rate) 
+      mat `var'`i'[1, 4] = r(lb)
+      mat `var'`i'[1, 5] = r(ub)
+      mat Out = Out \ `var'`i'
+    }
   }
 }
 mat Out =  Out[2..., 1...]
-mat colnames Out = Q Rate lb ub
+mat colnames Out = Q Female Rate lb ub
 mat2txt , matrix(Out) saving("$output/coefMat.txt") replace 
 
 
