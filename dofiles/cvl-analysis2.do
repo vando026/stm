@@ -45,7 +45,7 @@ log close
 ***************************************** PVL Vars ********************************************************
 ***********************************************************************************************************
 foreach mod in MVL PDV TI  {
-  eststo `mod': stcox `mod' $prev $vars, noshow
+  eststo `mod': stcox `mod' $vars, noshow
   mat `mod' = r(table)
   mat `mod' = `mod'[1..6,1]'
 }
@@ -148,6 +148,4 @@ mat2txt , matrix(Out) saving("$output/coefMat.txt") replace
 
 
 mat coef = MVL \ PDV\ TI\ P_MVL\ P_PDV\ P_TI
-mat list coef
-putexcel set "$output/coefMatrix", replace
-putexcel A1=matrix(coef, names)
+mat2txt, matrix(coef) saving("$output/coefHR.txt")
