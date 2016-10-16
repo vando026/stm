@@ -63,7 +63,7 @@ esttab MVL PDV TI using "$output/Model1.`opts5'", $opts1 $opts2 $opts3 $opts4 `o
 ***************************************** P_PVL vars ******************************************************
 ***********************************************************************************************************
 foreach mod in P_MVL P_PDV P_TI  {
-  eststo `mod': stcox `mod' $vars, noshow
+  eststo `mod': stcox `mod' noshow
   mat `mod' = r(table)
   mat `mod' = `mod'[1..6,1]'
 }
@@ -76,7 +76,7 @@ esttab P_MVL P_PDV P_TI using "$output/Model2.`opts5'", $opts1 $opts2 $opts3 $op
 **************************************** FVL vars *********************************************************
 ***********************************************************************************************************
 foreach mod in FVL FVL_PDV FVL_TI  {
-  eststo `mod': stcox `mod' $vars, noshow
+  eststo `mod': stcox `mod', noshow
 }
 
 
@@ -144,8 +144,16 @@ mat2txt , matrix(Out) saving("$output/coefMat.txt") replace
 ***********************************************************************************************************
 **************************************** For plot of coeff ************************************************
 ***********************************************************************************************************
-
-
-
 mat coef = MVL \ PDV\ TI\ P_MVL\ P_PDV\ P_TI
-mat2txt, matrix(coef) saving("$output/coefHR.txt")
+mat2txt, matrix(coef) saving("$output/coefHR.txt") replace
+
+
+mat define Out1 = J(1, 5, .)
+foreach var of varlist TI_q P_TI_q {
+stcox ib1.`var' Female
+mat `var' = r(table)
+mat `var' = `var'[1..6,2..4]'
+mat list `var'
+}
+mat Out1 =  TI_q \ P_TI_q
+mat2txt  , matrix(Out1) saving("$output/coefTI.txt") replace

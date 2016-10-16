@@ -29,7 +29,7 @@ tab HIV_pcat
 ** the VL means are large, divide by 1000
 foreach var of varlist P_MVL MVL FVL {
   sum `var'
-  qui replace `var' = `var'/1000
+  qui replace `var' = `var'/10000
   sum `var'
 }
 

@@ -67,43 +67,61 @@ dev.off()
 
 
 HR <- read.table(file.path(output, "coefHR.txt"))
-HR$Q <- c(c(1:3) - 0.15, c(1:3) + 0.15)
+HR$Q <- c(c(2,1,3) - 0.15, c(2, 1, 3) + 0.15)
+HR <- transform(HR, p=ifelse(pvalue<0.01, "<0.01", round(pvalue, 2)))
+HR <- transform(HR, p=round(pvalue, 3))
+len = 3
+scex <- c(rep(1, len), rep(1, len))
+cols <- c('dodgerblue4', 'indianred4')
+scols <- c(rep(cols[1], len),rep(cols[2], len))
 
 coefPlot <- function(mat, pmain, fname="", ylim2=6) {
-  # par(mar=c(3.5,2.4,2.6,0.1))
+  par(mar=c(3.5,2.4,2.6,1.1))
   png(file=file.path(output, paste0(fname, "_HR.png")))
-  Ylab="Hazard Ratio",
+  Ylab="Hazard Ratio"
   with(mat, 
     plotCI(Q, b, ui=ul, li=ll,
-    ylim=c(0.095, 1.30),
+    ylim=c(0.90, 1.3),
+    xlim=c(0.8, 3.3),
     main=pmain, lwd=2, cex=1, pch=19, 
     col=scols, 
     xlab="", 
     ylab=Ylab,
     xaxt="n", bty="n"))
-  axis(1, at=c(1:4))
-  axis(2, at=c(1:6))
-  with(mat, text(Q, lb, round(lb, 2), pos=1, cex=0.8))
-  with(mat, text(Q, ub, round(ub, 2), pos=3, cex=0.8))
-legend("bottom", bty="n",  
+  axis(1, at=c(1:3), labels=c("PDV", "MVL", "TI"))
+  with(mat, text(Q, b, p, pos=4, cex=0.8))
+  legend("top", bty="n",  
   c("HIV+ Only", "HIV+ and HIV-"), cex=1.0,
   ncol=2, lty=1, pt.cex=1.5, lwd=2, pch=20, col=cols)
+  abline(h=1.0, lty=2, col="gray")
   dev.off()
 }
-
-coefPlot(MVL, "Mean Viral Load (HIV+ only)", fname="MVL")
-
-
-abline(h=1.0, lty=2, col="gray")
-
-cvl <- c("MVL", "PDV", "TI")
-labx <- c(cvl, paste0("P", cvl))
-axis(side=1, at = mat$mod, labels = labx)
-legend(1.05, 1.22, 
-  c("HIV+ only", "HIV+ and HIV- "),
-  ncol=1, lty=1, pch=19, bty="n",
-  seg.len=2, lwd=2, col=cols)
+coefPlot(HR, "Comparison of CVL Measures: Hazard Ratios and CIs ", fname="HR")
 
 
+TI <- read.table(file.path(output, "coefTI.txt"))
+TI$Q <- c(c(1:3) - 0.15, c(1:3) + 0.15)
+coefPlot <- function(mat, pmain, fname="", ylim2=6) {
+  par(mar=c(3.5,2.4,2.6,1.1))
+  png(file=file.path(output, paste0(fname, "_HR.png")))
+  Ylab="Hazard Ratio"
+  with(mat, 
+    plotCI(Q, b, ui=ul, li=ll,
+    ylim=c(0.60, 1.9),
+    xlim=c(0.8, 3.4),
+    main=pmain, lwd=2, cex=1, pch=19, 
+    col=scols, 
+    xlab="Quartile (Ref: 1st Quartile)", 
+    ylab=Ylab,
+    xaxt="n", bty="n"))
+  axis(1, at=c(1:3), labels=c(2:4))
+  with(mat, text(Q, b, round(pvalue, 3), pos=4, cex=0.8))
+  legend("top", bty="n",  
+  c("HIV+ Only", "HIV+ and HIV-"), cex=1.0,
+  ncol=2, lty=1, pt.cex=1.5, lwd=2, pch=20, col=cols)
+  abline(h=1.0, lty=2, col="gray")
+  dev.off()
+}
+coefPlot(TI, "Transmission Index: Hazard ratios by Quartile", fname="TI")
 
 
