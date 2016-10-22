@@ -7,10 +7,10 @@
 **************************************** Bring in Datasets*************************************************
 ***********************************************************************************************************
 ** This brings in the FVL data
-import excel using "$source/Viral_load_estimation_Oct12.xls", clear firstrow 
+import excel using "$source/Viral_load_estimation_Oct22.xls", clear firstrow 
 
 ** I have to format vars from Diego file
-foreach var of varlist PVL_prev_v - FVL_TI {
+foreach var of varlist PVL - Unadj_FVL {
   qui ds `var', has(type string)
   if "`=r(varlist)'" != "." {
     replace `var' = "" if `var'=="NA"
