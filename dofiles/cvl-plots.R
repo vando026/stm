@@ -24,7 +24,7 @@ plotCVL <- function(dat, main, cols, ylim2, ylab2="") {
   scols <- c(rep(cols[1], len),rep(cols[2], len))
 
   # par(mar=c(4.2, 3.0, 5, 2))  
-  with(dat, plotCI(Age, mean, ui=ub, li=lb, ylim=c(0, ylim2), xlim=c(-0.1, 6.5), 
+  with(dat, plotCI(Age, mean, ui=ub, li=lb, ylim=ylim2, xlim=c(-0.1, 6.5), 
     xlab="Age Groups", ylab=ylab2, xaxt="n", yaxt="n", axes=FALSE, 
     lwd=2, cex=1, pch=16, col=scols, main=main))
     axis(side=1, at = seq(0, 6, 1), labels = agelab)
@@ -45,33 +45,35 @@ gmn <- read.dta13(file.path(derived, "mean2011.dta"), convert.factors=FALSE)
 # Add to Age to offset the graph
 gmn <- transform(gmn, Age = ifelse(Female==1, Age - 0.15, Age + 0.15))
 pmn <- subset(gmn, Data=="CVL")
-pmn$ub <- with(pmn, ifelse(ub > 400000, 401550, ub))
 fmn <- subset(gmn, Data=="FVL")
-fmn$ub <- with(fmn, ifelse(ub > 200000, ub - 200000, ub))
 
 ###########################################################################################################
 ######################################## Make plots #######################################################
 ###########################################################################################################
 png(file=file.path(output, "MVL_mn_2011.png"), 
   units="in", width=8, height=8, pointsize=14, res=300, type="cairo")
-plotCVL(pmn, main="Population-based Survey Viral Loads (N=2420)", 
-  ylab2="RNA HIV-1 copies/ml", cols=cols, ylim2=4e5)
-axis(side=2, at = seq(0, 4e5, 1e5), 
-  labels = formatC(c(seq(0, 3e5, 1e5), 5e5), format="d", big.mark=" "))
-legend("topright", c("Males: mean and 95% CI", "Females: mean and 95% CI"),
-  ncol=1, lty=1, pt.cex=1.5, lwd=2, pch=20, col=cols, bty="n")
-axis.break(axis=2, breakpos=350000, style = "slash", brw=0.02)
+plotCVL(pmn, 
+  main="",
+  # main=c("Population-based viral loads (n=2420):", 
+  # "Log mean and 95% CIs"),
+  ylab2="RNA HIV-1 copies/mL", cols=cols, ylim2=c(3, 5))
+axis(side=2, at = seq(3, 5, 0.5), labels=c(0, 2, 3, 4, 5))
+axis.break(axis=2, breakpos=3.25, style = "slash", brw=0.02)
+legend("top", c("Males", "Females"),
+  ncol=2, lty=1, pt.cex=1.5, lwd=2, pch=20, col=cols, bty="n")
 dev.off()
 
 png(file=file.path(output, "FMVL_mn_2011.png"), 
   units="in", width=8, height=8, pointsize=14, res=300, type="cairo")
-plotCVL(fmn, main="Facility-based Survey Viral Loads (N=3166)", 
-  ylab2="RNA HIV-1 copies/ml", ylim2=250000, cols=cols)
-axis(side=2, at = seq(0, 2e5, 5e4), 
-  labels = formatC(c(seq(0, 150000, 5e4), 4e5), format="d", big.mark=" "))
-axis.break(axis=2, breakpos=175000, style = "slash", brw=0.02)
-legend("topright", c("Males: mean and 95% CI", "Females: mean and 95% CI"),
-  ncol=1, lty=1, pt.cex=1.5, lwd=2, pch=20, col=cols, bty="n")
+plotCVL(fmn, 
+  main="",
+  # main=c("Facility-based survey viral loads (n=3166):",
+  # "Log mean and 95% CIs"),
+  ylab2="RNA HIV-1 copies/mL", cols=cols, ylim2=c(2.5, 4.5))
+axis(side=2, at = seq(2.5, 4.5, 0.5), labels=c(0, seq(3, 4.5, 0.5)))
+axis.break(axis=2, breakpos=2.65, style = "slash", brw=0.02)
+legend("top", c("Males", "Females"),
+  ncol=2, lty=1, pt.cex=1.5, lwd=2, pch=20, col=cols, bty="n")
 dev.off()
 
 ###########################################################################################################
@@ -84,22 +86,29 @@ f50 <- subset(over50, Data=='FVL')
 
 png(file=file.path(output, "P50.png"), 
   units="in", width=8, height=8, pointsize=14, res=300, type="cairo")
-plotCVL(p50, main=c("Population-based Survey:" ,  "Proportion Viral Load >50 000 copies/ml (N=2420)"), ylim2=1,
+plotCVL(p50, 
+  main="",
+  # main=c("Population-based viral loads:" ,  
+  # "Proportion >50 000 copies/mL (N=2420)"), 
+  ylim2=c(0, 1),
   ylab="Proportion " , cols=cols)
 axis(side=2, at = seq(0, 1, 0.2))
-legend("topright", 
-  c("Males: proportion and 95% CI", "Females: proportion and 95% CI"),
-  ncol=1, lty=1, pt.cex=1.5, lwd=2, pch=20, col=cols, bty="n")
+legend("top", 
+  c("Males", "Females"),
+  ncol=2, lty=1, pt.cex=1.5, lwd=2, pch=20, col=cols, bty="n")
 dev.off()
 
 png(file=file.path(output, "F50.png"), 
   units="in", width=8, height=8, pointsize=14, res=300, type="cairo")
-plotCVL(p50, main=c("Facility-based Survey:", "Proportion Viral Load >50 000 copies/ml (N=3166)"), ylim2=1,
+plotCVL(p50, 
+  main="",
+  # main=c("Facility-based viral loads:", "Proportion >50 000 copies/mL (N=3166)"), 
+  ylim2=c(0,1),
   ylab="Proportion ", cols=cols)
 axis(side=2, at = seq(0, 1, 0.2))
-legend("topright", 
-  c("Males: proportion and 95% CI", "Females: proportion and 95% CI"),
-  ncol=1, lty=1, pt.cex=1.5, lwd=2, pch=20, col=cols, bty="n")
+legend("top", 
+  c("Males", "Females"),
+  ncol=2, lty=1, pt.cex=1.5, lwd=2, pch=20, col=cols, bty="n")
 dev.off()
 
 

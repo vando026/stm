@@ -13,6 +13,7 @@ bysort Data:  tab1 Female Age
 bysort Data: sum ViralLoad, d
 bysort Data: ameans ViralLoad
 bysort Data: sum VLSuppressed
+gen logVL = log10(ViralLoad)
 ** bysort Data: tab OnART 
 
 gen Over50k = (ViralLoad>50000)
@@ -25,7 +26,7 @@ statsby mean=r(mean_g) lb=r(lb_g) ub=r(ub_g), by(Data Female Age) saving("$deriv
   ameans ViralLoad
 
 statsby mean=r(mean) lb=r(lb) ub=r(ub), by(Data Female Age) saving("$derived/mean2011", replace): /// 
-  ci ViralLoad
+  ci logVL
   
 statsby mean=r(p50) lb=r(p25) ub=r(p75), by(Data Female Age) saving("$derived/med2011", replace): /// 
   sum ViralLoad , detail
