@@ -46,16 +46,23 @@ local vars Log_MVL PDV TI Log_PVL P_TI P_PDV
 foreach var of local vars {
   use "$derived/cvl-analysis2", clear
   gen ID = _n
-  stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
+  qui stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
     origin(EarliestHIVNegative) scale(365.25) exit(EndDate) id(ID)
-  egen `var'_q = xtile(`var'), n(4)
+  qui egen `var'_q = xtile(`var'), n(4)
+  qui sum `var', d
+  local p50 = r(p50)
+  local p25 = r(p25)
+  local p75 = r(p75)
   strate `var'_q AgeGrp1 Female, per(100) output("$output/`var'", replace)
   ** #
-  use "$output/`var'", clear
-  merge m:1 Female AgeGrp1 using "`PopStand'", nogen
+  qui use "$output/`var'", clear
+  qui merge m:1 Female AgeGrp1 using "`PopStand'", nogen
   collapse (mean) rate = _Rate [fweight = N], by(`var'_q Female)
   rename `var'_q Q
   gen Label = "`var'"
+  gen p50 = `p50'
+  gen p25 = `p25'
+  gen p75 = `p75'
   tempfile Q`var'
   save "`Q`var''" , replace
   use "`QDat'", clear
