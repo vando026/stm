@@ -48,23 +48,20 @@ foreach var of local vars {
   gen ID = _n
   qui stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
     origin(EarliestHIVNegative) scale(365.25) exit(EndDate) id(ID)
-  qui egen `var'_q = xtile(`var'), n(4)
   qui sum `var', d
   local p50 = r(p50)
   local p25 = r(p25)
   local p75 = r(p75)
-  strate `var'_q AgeGrp1 Female, per(100) output("$output/`var'", replace)
-  ** #
-  qui use "$output/`var'", clear
-  qui merge m:1 Female AgeGrp1 using "`PopStand'", nogen
-  collapse (mean) rate = _Rate (semean) se = _Rate [fweight = N], by(`var'_q Female)
-  rename `var'_q Q
-  gen lb = rate - 1.96 * se
-  gen ub = rate + 1.96 * se
-  gen Label = "`var'"
+  qui egen Q = xtile(`var'), n(4)
+  strate Q Female, per(100) output("$output/`var'", replace)
+  use "$output/`var'", clear
   gen p50 = `p50'
   gen p25 = `p25'
   gen p75 = `p75'
+  gen Label = "`var'"
+  rename _Rate rate
+  rename  _Lower lb
+  rename _Upper ub
   tempfile Q`var'
   save "`Q`var''" , replace
   use "`QDat'", clear
@@ -74,7 +71,7 @@ foreach var of local vars {
 
 use "`QDat'", clear
 drop in 1
-drop x
+drop x _*
 sort Label Female Q
 export delimited using "$output\StdQuartile.txt", delimiter(tab) replace
 
@@ -84,10 +81,10 @@ qui stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
   origin(EarliestHIVNegative) scale(365.25) exit(EndDate) id(ID)
 gen PTime = (EndDate - EarliestHIVNegative)/365.25
 egen Q = xtile(Log_MVL), n(4)
-collapse (count) sampN=IIntID (sum) D=SeroConvertEvent Y=PTime if Female==1 & Q==1, by(AgeGrp1) 
+collapse (count) sampN=IIntID (sum) D=SeroConvertEvent Y=PTime if Female==1, by(Q AgeGrp1) 
 merge m:1 AgeGrp1 using "`PopStand'", nogen
 gen fpc=sampN/N
-svyset, fpc(fpc)  strata(AgeGrp1)
-svy: ratio (Test: D/Y), stdize(AgeGrp1) stdweight(N) 
+svyset  
+svy: ratio (Test: D/Y), stdize(AgeGrp1) stdweight(N) over(Q)
 
 

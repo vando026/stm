@@ -20,25 +20,25 @@ scex <- c(rep(1, len), rep(1, len))
 cols <- c('dodgerblue4', 'indianred4')
 scols <- c(rep(cols[1], len),rep(cols[2], len))
 
-coefPlot <- function(mat, pmain, ylim2=c(0, 6) {
+coefPlot <- function(
+  mat, pmain, 
+  ylim2=c(0, 6),
+  ltext) {
   par(mar=c(3.5,2.4,2.6,0.1))
   Ylab="Seroconversion rate per 100 person-years"
   with(mat, 
     plotCI(Q, rate, ui=ub, li=lb,
-    ylim=c(0, ylim2),
+    ylim=ylim2,
     main=pmain, lwd=2, cex=1, pch=19, 
     col=scols, 
-    xlab="Quartile", 
+    xlab="", 
     ylab=Ylab,
     xaxt="n", bty="n"))
   axis(1, at=c(1:4))
   axis(2, at=c(1:6))
-  # with(mat, text(Q, lb, round(lb, 2), pos=1, cex=0.8))
-  # with(mat, text(Q, ub, round(ub, 2), pos=3, cex=0.8))
-legend("bottom", bty="n",  
-  c("Males  ", "Females",
-  paste("Lower quartile=", mat$p25[1])), 
-  cex=1.0, ncol=1, lty=1, pt.cex=1.5, lwd=2, pch=20, col=c(cols, "white"))
+  text(2.5, 0, paste("Note: IQR", 
+    round(mat$p25[1],2), "-", round(mat$p75[1],2),
+    ltext))
 }
 
 png(file=file.path(output, "CVL_quant.png"), 
@@ -47,19 +47,19 @@ par(oma=c(0.0, 3.0, 0.3,0.2))
 nf <- layout(matrix(c(1:6,rep(7, 3)), ncol=3, byrow=TRUE),
   heights=c(6, 6, 1.0))
 layout.show(nf)
-coefPlot(MVL, "Mean Viral Load (HIV+ only)")
-coefPlot(PDV, "Proportion of Detectable Virus (HIV+ only)", fname="PDV")
-coefPlot(TI, "Transmission Index (HIV+ only)", fname="TI")
-coefPlot(PMVL, "Mean Viral Load (HIV+ and HIV-)", fname="PMVL")
-coefPlot(PPDV, "Proportion of Detectable Virus (HIV+ and HIV-)", fname="PPDV")
-coefPlot(PTI, "Transmission Index (HIV+ and HIV-)", fname="PTI")
+coefPlot(MVL, "A:   Log mean viral load (HIV+ only)", ltext="copies/mL")
+coefPlot(PDV, "B:   Percent detectable virus (HIV+ only)", ltext="%")
+coefPlot(TI, "C:   Transmission index (HIV+ only)", ltext="events/100 acts")
+coefPlot(PMVL, "D:   Log mean viral load (HIV+ and HIV-)", ltext="copies/mL")
+coefPlot(PPDV, "E:   Percentage detectable virus (HIV+ and HIV-)", ltext="%")
+coefPlot(PTI, "F:   Transmission index (HIV+ and HIV-)", ltext="events/100 acts")
 plot(1,1,type="n", xlab='', ylab='', axes=FALSE)
 legend("bottom", bty="n",  
   c("Females  ", "Males"), cex=1.5,
   ncol=2, lty=1, pt.cex=1.5, lwd=2, pch=20, col=cols,
-  inset=c(5.8,  -1.2))
+  inset=c(3.8,  -1.2))
 mtext("Seroconversions per 100 person-years", line=1, cex=1, side=2, outer=TRUE, at=0.55)
-mtext("Quartile", line=-7, side=1, outer=TRUE, at=0.54, cex=1)
+mtext("Quartile", line=-7, side=1, outer=TRUE, at=0.5, cex=1)
 dev.off()
 
 

@@ -29,15 +29,15 @@ drop if BSIntID > 17884
 
 ** Make HIV prev a percent
 ** gen HIV_prev = hiv8_2011_ * 100
-egen HIV_pcat = cut(HIV_Prev), at(0, 12.5, 25, 100) icode label
+egen HIV_pcat = cut(HIV_Prev), at(0, 15, 25, 100) icode label
 tab HIV_pcat
 
 ** the VL means are large, divide by 1000
-foreach var of varlist P_MVL MVL FVL {
-  sum `var'
-  qui replace `var' = `var'/1000
-  sum `var'
-}
+** foreach var of varlist P_MVL MVL FVL {
+  ** sum `var'
+  ** qui replace `var' = `var'/1000
+  ** sum `var'
+** }
 
 encode(IsUrbanOrR) , gen(urban_ec)
 recode urban_ec (2=1) (1=2) (3=3), gen(urban)

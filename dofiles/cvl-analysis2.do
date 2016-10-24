@@ -6,7 +6,7 @@
 ***********************************************************************************************************
 **************************************** Single Rec Data **************************************************
 ***********************************************************************************************************
-log using "$output/Output$today.txt", replace text 
+** log using "$output/Output$today.txt", replace text 
 use "$derived/cvl-analysis2", clear
 
 gen ID = _n
@@ -25,15 +25,15 @@ foreach var of varlist Log_MVL PDV TI {
   dis as text _n "=========================================> Showing for `var'"
   stcox `var', noshow
   stcox `var' $urban $vars, noshow
-  stcox `var' $urban $prev $vars, noshow
+  stcox `var'  $prev $urban $vars, noshow
 } 
 
 foreach var of varlist P_MVL P_PDV P_TI {
   dis as text _n "=========================================> Showing for `var'"
-  stcox `var', noshow
-  stcox `var' $vars, noshow
-  stcox `var' $urban $vars, noshow
-  stcox `var' $urban $prev $vars, noshow
+  ** stcox `var', noshow
+  ** stcox `var' $vars, noshow
+  ** stcox `var' $urban $vars, noshow
+  stcox `var' $prev $urban $vars, noshow
 } 
 
 log close
@@ -58,7 +58,7 @@ esttab Log_MVL PDV TI using "$output/Model1.`opts5'", $opts1 $opts2 $opts3 $opts
 ***********************************************************************************************************
 ***************************************** P_PVL vars ******************************************************
 ***********************************************************************************************************
-foreach mod in Log_PVL P_PDV P_TI  {
+foreach mod in Log_PVL Unadj_P_PDV Unadj_P_TI  {
   eststo `mod': stcox `mod' $vars , noshow
   mat `mod' = r(table)
   mat `mod' = `mod'[1..6,1]'
@@ -82,56 +82,53 @@ esttab Log_FVL FVL_PDV FVL_TI using "$output/Model3.`opts5'", $opts1 $opts2 $opt
 **************************************** Compare model fit ************************************************
 ***********************************************************************************************************
 foreach var of varlist Log_MVL PDV TI {
-  eststo `var'_prev: stcox `var' $prev  $vars, noshow
+  eststo `var'_only: stcox `var', noshow
+  eststo `var'_prev: stcox `var' $prev,  noshow
 } 
+eststo Prev: stcox $prev , noshow
 
 ** Compute AIC = -2ln L + 2(k+c), k is model parameters
-mat AIC = J(9, 1, .)
+mat AIC = J(4, 4, .)
 ** Get the model with no HIV prevalence
 local i = 1
-foreach mod in  Log_MVL_prev PDV_prev TI_prev Log_MVL PDV TI {
+foreach mod in  Prev Log_MVL_only PDV_only TI_only {
   dis as text "=========== Showing AIC for `mod'"
   est restore `mod'
   mat AIC[`i', 1] = -2*`=e(ll)' + 2*(`=e(df_m)' + 1)
 local ++i
 }
 
-lrtest  Log_MVL Log_MVL_prev, force
-mat AIC[7, 1] = r(p)
-lrtest  PDV PDV_prev, force
-mat AIC[8, 1] = r(p)
-lrtest TI TI_prev, force
-mat AIC[9, 1] = r(p)
+lrtest  Log_MVL_only Log_MVL_prev, force
+mat AIC[2, 2] = r(p)
+lrtest  PDV_only PDV_prev, force
+mat AIC[3, 2] = r(p)
+lrtest TI_only TI_prev, force
+mat AIC[4, 2] = r(p)
 mat list AIC
-mat AIC1 = (AIC[1..3, 1] , AIC[4..6, 1], AIC[7..9, 1])
-mat list AIC1
 
 
 ** PVL with prevalence
 foreach var of varlist Log_PVL P_PDV P_TI {
-  eststo `var'_prev: stcox `var' $prev  $vars, noshow
+  eststo `var'_only: stcox `var', noshow
+  eststo `var'_prev: stcox  `var' $prev  , noshow
 } 
 
-** Compute AIC = -2ln L + 2(k+c), k is model parameters
-mat AICp = J(9, 1, .)
-** Get the model with no HIV prevalence
 local i = 1
-foreach mod in  Log_PVL_prev P_PDV_prev P_TI_prev Log_PVL P_PDV P_TI {
+foreach mod in  Prev Log_PVL_only P_PDV_only P_TI_only {
   dis as text "=========== Showing AIC for `mod'"
   est restore `mod'
-  mat AICp[`i', 1] = -2*`=e(ll)' + 2*(`=e(df_m)' + 1)
+  mat AIC[`i', 3] = -2*`=e(ll)' + 2*(`=e(df_m)' + 1)
 local ++i
 }
 
-lrtest  Log_PVL Log_PVL_prev, force
-mat AICp[7, 1] = r(p)
-lrtest  P_PDV P_PDV_prev, force
-mat AICp[8, 1] = r(p)
-lrtest P_TI P_TI_prev, force
-mat AICp[9, 1] = r(p)
-mat list AICp
-mat AIC1p = (AICp[1..3, 1] , AICp[4..6, 1], AICp[7..9, 1])
-mat list AIC1p
+
+lrtest  Log_PVL_only Log_PVL_prev, force
+mat AIC[2, 4] = r(p)
+lrtest  P_PDV_only P_PDV_prev, force
+mat AIC[3, 4] = r(p)
+lrtest P_TI_only P_TI_prev, force
+mat AIC[4, 4] = r(p)
+mat list AIC
 
 ***********************************************************************************************************
 **************************************** Table 2 incidence ************************************************
@@ -184,3 +181,8 @@ mat list `var'
 }
 mat Out1 =  TI_q \ P_TI_q
 mat2txt  , matrix(Out1) saving("$output/coefTI.txt") replace
+
+
+pwcorr Log_PVL FVL, sig
+pwcorr P_PDV FVL_PDV, sig
+pwcorr P_TI FVL_TI, sig
