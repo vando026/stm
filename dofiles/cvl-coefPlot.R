@@ -20,12 +20,11 @@ scex <- c(rep(1, len), rep(1, len))
 cols <- c('dodgerblue4', 'indianred4')
 scols <- c(rep(cols[1], len),rep(cols[2], len))
 
-coefPlot <- function(mat, pmain, fname="", ylim2=6) {
-  # par(mar=c(3.5,2.4,2.6,0.1))
-  png(file=file.path(output, paste0(fname, ".png")))
+coefPlot <- function(mat, pmain, ylim2=c(0, 6) {
+  par(mar=c(3.5,2.4,2.6,0.1))
   Ylab="Seroconversion rate per 100 person-years"
   with(mat, 
-    plotCI(Q, Rate, ui=ub, li=lb,
+    plotCI(Q, rate, ui=ub, li=lb,
     ylim=c(0, ylim2),
     main=pmain, lwd=2, cex=1, pch=19, 
     col=scols, 
@@ -34,12 +33,12 @@ coefPlot <- function(mat, pmain, fname="", ylim2=6) {
     xaxt="n", bty="n"))
   axis(1, at=c(1:4))
   axis(2, at=c(1:6))
-  with(mat, text(Q, lb, round(lb, 2), pos=1, cex=0.8))
-  with(mat, text(Q, ub, round(ub, 2), pos=3, cex=0.8))
+  # with(mat, text(Q, lb, round(lb, 2), pos=1, cex=0.8))
+  # with(mat, text(Q, ub, round(ub, 2), pos=3, cex=0.8))
 legend("bottom", bty="n",  
-  c("Males  ", "Females"), cex=1.0,
-  ncol=2, lty=1, pt.cex=1.5, lwd=2, pch=20, col=cols)
-  dev.off()
+  c("Males  ", "Females",
+  paste("Lower quartile=", mat$p25[1])), 
+  cex=1.0, ncol=1, lty=1, pt.cex=1.5, lwd=2, pch=20, col=c(cols, "white"))
 }
 
 png(file=file.path(output, "CVL_quant.png"), 
@@ -48,7 +47,7 @@ par(oma=c(0.0, 3.0, 0.3,0.2))
 nf <- layout(matrix(c(1:6,rep(7, 3)), ncol=3, byrow=TRUE),
   heights=c(6, 6, 1.0))
 layout.show(nf)
-coefPlot(MVL, "Mean Viral Load (HIV+ only)", fname="MVL")
+coefPlot(MVL, "Mean Viral Load (HIV+ only)")
 coefPlot(PDV, "Proportion of Detectable Virus (HIV+ only)", fname="PDV")
 coefPlot(TI, "Transmission Index (HIV+ only)", fname="TI")
 coefPlot(PMVL, "Mean Viral Load (HIV+ and HIV-)", fname="PMVL")
