@@ -6,14 +6,14 @@ root  =  file.path(Sys.getenv("USERPROFILE"), "Dropbox/AfricaCentre/Projects/Com
 derived  =  file.path(root, "derived")
 output  =  file.path(root, "output")
 
-mat <- read.table(file.path(output, "coefMat.txt"))
+mat <- read.table(file.path(output, "StdQuartile.txt"), header=TRUE)
 mat <- transform(mat, Q=ifelse(Female==1, Q - 0.15, Q + 0.15))
-MVL <- mat[grep("^MVL", rownames(mat), value=TRUE), ]
-PMVL <- mat[grep("^P_MVL", rownames(mat), value=TRUE), ]
-PDV <- mat[grep("^PDV", rownames(mat), value=TRUE), ]
-PPDV <- mat[grep("^P_PDV", rownames(mat), value=TRUE), ]
-TI <- mat[grep("^TI", rownames(mat), value=TRUE), ]
-PTI <- mat[grep("^P_TI", rownames(mat), value=TRUE), ]
+MVL <- mat[mat$Label=="Log_MVL", ]
+PMVL <- mat[mat$Label=="Log_PVL", ]
+PDV <- mat[mat$Label=="PDV", ]
+PPDV <- mat[mat$Label=="P_PDV", ]
+TI <- mat[mat$Label=="TI", ]
+PTI <- mat[mat$Label=="P_TI", ]
 
 len = 4
 scex <- c(rep(1, len), rep(1, len))

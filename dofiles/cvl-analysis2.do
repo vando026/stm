@@ -21,7 +21,7 @@ global vars "Female i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
 ***********************************************************************************************************
 **************************************** No Negatives *****************************************************
 ***********************************************************************************************************
-foreach var of varlist G_MVL {
+foreach var of varlist Log_MVL PDV TI {
   dis as text _n "=========================================> Showing for `var'"
   stcox `var', noshow
   stcox `var' $urban $vars, noshow

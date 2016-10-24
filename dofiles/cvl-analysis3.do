@@ -36,45 +36,38 @@ save "`PopStand'"
 ***********************************************************************************************************
 **************************************** Quartiles ********************************************************
 ***********************************************************************************************************
-use "$derived/cvl-analysis2", clear
+clear
+set obs 1 
+gen x = 1
+tempfile QDat
+save "`QDat'" 
 
-gen ID = _n
-stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
-  origin(EarliestHIVNegative) scale(365.25) exit(EndDate) id(ID)
-
-egen Log_MVL_q = xtile(Log_MVL), n(4)
-strate Log_MVL_q AgeGrp1 Female, per(100) output("$output/MVL", replace)
-strate Log_MVL_q if Female==1 , per(100) 
-strate Log_MVL_q if Female==0 , per(100) 
-
-use "$output/MVL", clear
-merge m:1 Female AgeGrp1 using "`PopStand'", nogen
-collapse (mean) std_inc_rate = _Rate [fweight = N], by(Log_MVL_q Female)
-
-
-foreach var of varlist Log_MVL PDV TI {
+local vars Log_MVL PDV TI Log_PVL P_TI P_PDV 
+foreach var of local vars {
+  use "$derived/cvl-analysis2", clear
+  gen ID = _n
+  stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
+    origin(EarliestHIVNegative) scale(365.25) exit(EndDate) id(ID)
   egen `var'_q = xtile(`var'), n(4)
-  strate `var'_q, per(100) output("$output/`var'", replace)
+  strate `var'_q AgeGrp1 Female, per(100) output("$output/`var'", replace)
+  ** #
+  use "$output/`var'", clear
+  merge m:1 Female AgeGrp1 using "`PopStand'", nogen
+  collapse (mean) rate = _Rate [fweight = N], by(`var'_q Female)
+  rename `var'_q Q
+  gen Label = "`var'"
+  tempfile Q`var'
+  save "`Q`var''" , replace
+  use "`QDat'", clear
+  append using "`Q`var''"
+  save "`QDat'", replace
 }
 
+use "`QDat'", clear
+drop in 1
+drop x
+sort Label Female Q
+export delimited using "$output\StdQuartile.txt", delimiter(tab) replace
 
-mat define Out = J(1, 5, .)
-  dis as text _n "=========== `var'"
-  cap drop `var'_q
-  forvalue m = 0/1 {
-    forvalue i = 1/4 {
-    qui stptime if `var'_q==`i' & Female==`m', per(100) dd(2) 
-      mat define `var'`i' = J(1, 5, .)
-      mat rownames `var'`i' = "`var'`i'`m'"
-      mat `var'`i'[1, 1] = `i'
-      mat `var'`i'[1, 2] = `m'
-      mat `var'`i'[1, 3] = r(rate) 
-      mat `var'`i'[1, 4] = r(lb)
-      mat `var'`i'[1, 5] = r(ub)
-      mat Out = Out \ `var'`i'
-    }
-  }
-}
-mat Out =  Out[2..., 1...]
-mat colnames Out = Q Female Rate lb ub
-mat2txt , matrix(Out) saving("$output/coefMat.txt") replace 
+
+
