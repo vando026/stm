@@ -30,7 +30,6 @@ dis as text "$today"
 **************************************** Run do files *****************************************************
 ***********************************************************************************************************
 ** The dofiles are to be run in the following sequence
-
 ** This dofile prepares the repeat-tester seroconverion dates
 do "$dofile/HIVSurveillance2011"
 

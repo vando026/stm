@@ -244,7 +244,7 @@ drop Keep
 egen AgeGrp1 = cut(Age), at(15(5)45, 100) label icode
 
 foreach var of varlist PDV - AgeGrp1 {
-  keep if !missing(`var')
+  qui keep if !missing(`var')
 }
 
 saveold "$derived/cvl-analysis2", replace

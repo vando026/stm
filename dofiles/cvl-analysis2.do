@@ -21,7 +21,7 @@ global vars "Female i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
 ***********************************************************************************************************
 **************************************** No Negatives *****************************************************
 ***********************************************************************************************************
-foreach var of varlist Log_MVL PDV TI {
+foreach var of varlist G_MVL {
   dis as text _n "=========================================> Showing for `var'"
   stcox `var', noshow
   stcox `var' $urban $vars, noshow
@@ -139,6 +139,9 @@ mat list AIC1p
 foreach var of varlist HIV_pcat Female AgeGrp1 urban Marital PartnerCat AIQ {
   stptime , by(`var') per(100) dd(2) 
 }
+
+stptime, by(Female) per(100)
+strate  Female , per(100) output("$output/test", replace) 
 
 
 mat define Out = J(1, 5, .)
