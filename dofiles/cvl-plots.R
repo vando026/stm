@@ -9,7 +9,7 @@ library(plotrix)
 ###########################################################################################################
 ######################################## Functions ########################################################
 ###########################################################################################################
-Ratio <- function(Age, dat) {
+Ratio <- function(dat) {
   out <- with(dat, round(mean[Female==0]/mean[Female==1], 2))
   out
 }
@@ -28,9 +28,6 @@ plotCVL <- function(dat, main, cols, ylim2, ylab2="") {
     xlab="Age Groups", ylab=ylab2, xaxt="n", yaxt="n", axes=FALSE, 
     lwd=2, cex=1, pch=16, col=scols, main=main))
     axis(side=1, at = seq(0, 6, 1), labels = agelab)
-  dat$Ratio <- Ratio(dat=dat)
-  dat <- transform(dat, Ratio = ifelse(Female==0, Ratio, ""))
-  with(dat, text(Age, mean, Ratio, pos=4, cex=0.8))
 }
 
 ###########################################################################################################
@@ -40,38 +37,36 @@ root  =  file.path(Sys.getenv("USERPROFILE"), "Dropbox/AfricaCentre/Projects/Com
 derived  =  file.path(root, "derived")
 output  =  file.path(root, "output")
 
-# Cut off UB for fem gmn plot
-gmn <- read.dta13(file.path(derived, "mean2011.dta"), convert.factors=FALSE) 
+gmn <- read.dta13(file.path(derived, "gmean2011.dta"), convert.factors=FALSE) 
 # Add to Age to offset the graph
-gmn <- transform(gmn, Age = ifelse(Female==1, Age - 0.15, Age + 0.15))
-pmn <- subset(gmn, Data=="CVL")
+gmn <- transform(gmn, Age = ifelse(Female==1, Age + 0.15, Age - 0.15))
 fmn <- subset(gmn, Data=="FVL")
+fmn$ub <- with(fmn, ifelse(ub > 19000, ub - 12000, ub))
+gmn <- subset(gmn, Data=="CVL")
+gmn$ub <- with(gmn, ifelse(ub > 90000, ub - 30000, ub))
+transform(gmn, Ratio=Ratio(gmn))
+transform(fmn, Ratio=Ratio(fmn))
 
 ###########################################################################################################
 ######################################## Make plots #######################################################
 ###########################################################################################################
 png(file=file.path(output, "MVL_mn_2011.png"), 
   units="in", width=8, height=8, pointsize=14, res=300, type="cairo")
-plotCVL(pmn, 
-  main="",
-  # main=c("Population-based viral loads (n=2420):", 
-  # "Log mean and 95% CIs"),
-  ylab2="RNA HIV-1 copies/mL", cols=cols, ylim2=c(3, 5))
-axis(side=2, at = seq(3, 5, 0.5), labels=c(0, 2, 3, 4, 5))
-axis.break(axis=2, breakpos=3.25, style = "slash", brw=0.02)
+plotCVL(gmn, main="",
+  ylab2="Geometric mean viral load (copies/mL)", cols=cols, ylim2=c(0, 65000))
+axis(side=2, at = seq(0, 60000, 10000), 
+  labels = formatC(c(seq(0, 50000, 10000), 90000), format="d", big.mark=" "))
+axis.break(axis=2, breakpos=55000, style = "slash", brw=0.02)
 legend("top", c("Males", "Females"),
   ncol=2, lty=1, pt.cex=1.5, lwd=2, pch=20, col=cols, bty="n")
 dev.off()
 
 png(file=file.path(output, "FMVL_mn_2011.png"), 
   units="in", width=8, height=8, pointsize=14, res=300, type="cairo")
-plotCVL(fmn, 
-  main="",
-  # main=c("Facility-based survey viral loads (n=3166):",
-  # "Log mean and 95% CIs"),
-  ylab2="RNA HIV-1 copies/mL", cols=cols, ylim2=c(2.5, 4.5))
-axis(side=2, at = seq(2.5, 4.5, 0.5), labels=c(0, seq(3, 4.5, 0.5)))
-axis.break(axis=2, breakpos=2.65, style = "slash", brw=0.02)
+plotCVL(fmn, main="",
+  ylab2="Geometric mean viral load (copies/mL)", cols=cols, ylim2=c(0, 8000))
+axis(side=2, at = seq(0, 8000, 2000), labels=c(0, 2000, 4000, 6000, 20000))
+axis.break(axis=2, breakpos=6500, style = "slash", brw=0.02)
 legend("top", c("Males", "Females"),
   ncol=2, lty=1, pt.cex=1.5, lwd=2, pch=20, col=cols, bty="n")
 dev.off()
@@ -83,15 +78,14 @@ over50 <- read.dta(file.path(derived, "over50_2011.dta"), convert.factors=FALSE)
 over50 <- transform(over50, Age = ifelse(Female==1, Age - 0.15, Age + 0.15))
 p50 <- subset(over50, Data=="CVL")
 f50 <- subset(over50, Data=='FVL')
+transform(p50, Ratio=Ratio(p50))
 
 png(file=file.path(output, "P50.png"), 
   units="in", width=8, height=8, pointsize=14, res=300, type="cairo")
 plotCVL(p50, 
   main="",
-  # main=c("Population-based viral loads:" ,  
-  # "Proportion >50 000 copies/mL (N=2420)"), 
   ylim2=c(0, 1),
-  ylab="Proportion " , cols=cols)
+  ylab="Proportion  >50,000 copies/mL" , cols=cols)
 axis(side=2, at = seq(0, 1, 0.2))
 legend("top", 
   c("Males", "Females"),
@@ -100,11 +94,9 @@ dev.off()
 
 png(file=file.path(output, "F50.png"), 
   units="in", width=8, height=8, pointsize=14, res=300, type="cairo")
-plotCVL(p50, 
-  main="",
-  # main=c("Facility-based viral loads:", "Proportion >50 000 copies/mL (N=3166)"), 
+plotCVL(p50, main="",
   ylim2=c(0,1),
-  ylab="Proportion ", cols=cols)
+  ylab="Proportion >50,000 copies/mL ", cols=cols)
 axis(side=2, at = seq(0, 1, 0.2))
 legend("top", 
   c("Males", "Females"),

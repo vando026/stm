@@ -33,10 +33,10 @@ egen HIV_pcat = cut(HIV_Prev), at(0, 15, 25, 100) icode label
 tab HIV_pcat
 
 ** the VL means are large, divide by 1000
-** foreach var of varlist P_MVL MVL FVL {
-  ** sum `var'
-  ** qui replace `var' = `var'/1000
-  ** sum `var'
+** foreach var of varlist G_MVL {
+**   sum `var'
+**   qui replace `var' = `var'/1000
+**   sum `var'
 ** }
 
 encode(IsUrbanOrR) , gen(urban_ec)

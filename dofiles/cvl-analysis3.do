@@ -14,7 +14,7 @@ keep BSIntID IIntID ExpYear
 ** Resident in BS in this year, drop if not
 drop if missing(BSIntID)
 duplicates drop IIntID, force 
-keep if ExpYear >= 2011
+keep if inrange(ExpYear, 2004, 2015)
 
 ** You must run cvl-manage2.do first
 merge m:1 IIntID using "`Individuals'",  keep(match)
@@ -28,10 +28,18 @@ drop Keep
 ** Make Age Category 
 egen AgeGrp1 = cut(Age), at(15(5)45, 100) label icode
 keep IIntID AgeGrp1 Female
-keep if Female==1
 collapse (count) N=IIntID, by(AgeGrp1)
 tempfile PopStand
 save "`PopStand'" 
+
+use "$derived/cvl-analysis2", clear
+keep IIntID AgeGrp1 
+collapse (count) n=IIntID, by(AgeGrp1)
+merge 1:1 AgeGrp1 using "`PopStand'"
+gen Weight = N/n
+gen fpc = 1/Weight
+tempfile PopWeights
+save "`PopWeights'" 
 
 ***********************************************************************************************************
 **************************************** Quartiles ********************************************************
@@ -42,7 +50,7 @@ gen x = 1
 tempfile QDat
 save "`QDat'" 
 
-local vars Log_MVL PDV TI Log_PVL P_TI P_PDV 
+local vars G_MVL PDV TI G_PVL P_TI P_PDV 
 foreach var of local vars {
   use "$derived/cvl-analysis2", clear
   gen ID = _n
@@ -76,15 +84,28 @@ sort Label Female Q
 export delimited using "$output\StdQuartile.txt", delimiter(tab) replace
 
 use "$derived/cvl-analysis2", clear
-gen ID = _n
-qui stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
-  origin(EarliestHIVNegative) scale(365.25) exit(EndDate) id(ID)
 gen PTime = (EndDate - EarliestHIVNegative)/365.25
-egen Q = xtile(Log_MVL), n(4)
-collapse (count) sampN=IIntID (sum) D=SeroConvertEvent Y=PTime if Female==1, by(Q AgeGrp1) 
-merge m:1 AgeGrp1 using "`PopStand'", nogen
-gen fpc=sampN/N
-svyset  
-svy: ratio (Test: D/Y), stdize(AgeGrp1) stdweight(N) over(Q)
+global CVL G_MVL G_PVL PDV P_PDV TI P_TI
+keep IIntID SeroConvertEvent Female PTime AgeGrp1 $CVL
+merge m:1 AgeGrp1 using "`PopWeights'", nogen
+
+
+foreach var of global CVL {
+  capture drop Q_`var'
+  dis as text "=============> `var'"
+  egen Q_`var' = xtile(`var'), n(4)
+  svyset IIntID [pweight=Weight], strata(Q_`var') vce(linearized) singleunit(missing) 
+  svy: ratio (SeroConvertEvent/PTime), stdize(AgeGrp1) stdweight(Weight) over(Q_`var')
+}
+
+
+svyset IIntID [pweight=Weight], strata(Q_G_MVL) vce(linearized) singleunit(missing)
+svy linearized : ratio (SeroConvertEvent/PTime), stdize(AgeGrp1) stdweight(Weight) over(Q_G_MVL)
+
+collapse (sum) SeroConvertEvent PTime, by(Q_G_MVL)
+gen test = SeroConvertEvent/PTime
+list * 
+
+
 
 

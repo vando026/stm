@@ -41,7 +41,8 @@ log close
 ***********************************************************************************************************
 ***************************************** PVL Vars ********************************************************
 ***********************************************************************************************************
-foreach mod in Log_MVL PDV TI  {
+global CVL G_MVL PDV TI 
+foreach mod of global CVL   {
   eststo `mod': stcox `mod' $vars , noshow
   mat `mod' = r(table)
   mat `mod' = `mod'[1..6,1]'
@@ -50,55 +51,59 @@ foreach mod in Log_MVL PDV TI  {
 global opts1 "cells("b(fmt(%9.3f)) ci(par(( - ))) p") substitute(0.000 "<0.001") compress"
 global opts2 "eform varwidth(12) modelwidth(6 13 6) nonumbers nogaps replace"
 global opts3 "mlabels("Model 1" "Model 2" "Model 3")"
-global opts4 order(Log_MVL PDV TI)
+global opts4 order($CVL)
 global opts6 "drop(0.HIV_pcat 0.AgeGrp1 1.urban 1.Marital 0.PartnerCat 1.AIQ)"
 local opts5 "csv"
-esttab Log_MVL PDV TI using "$output/Model1.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
+esttab $CVL using "$output/Model1.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
 
 ***********************************************************************************************************
 ***************************************** P_PVL vars ******************************************************
 ***********************************************************************************************************
-foreach mod in Log_PVL Unadj_P_PDV Unadj_P_TI  {
+global PCVL G_PVL P_PDV P_TI 
+foreach mod of global PCVL {
   eststo `mod': stcox `mod' $vars , noshow
   mat `mod' = r(table)
   mat `mod' = `mod'[1..6,1]'
 }
 
-global opts4 order(Log_PVL P_PDV P_TI)
-esttab Log_PVL P_PDV P_TI using "$output/Model2.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
+global opts4 order($PCVL)
+esttab $PCVL using "$output/Model2.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
 
 
 ***********************************************************************************************************
 **************************************** FVL vars *********************************************************
 ***********************************************************************************************************
-foreach mod in Log_FVL FVL_PDV FVL_TI  {
+global FVL FVL_PDV FVL_TI
+foreach mod of global FVL {
   eststo `mod': stcox `mod' $vars, noshow
 }
-global opts4 order(Log_FVL FVL_PDV FVL_TI)
-esttab Log_FVL FVL_PDV FVL_TI using "$output/Model3.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
+global opts4 order($FVL)
+esttab $FVL using "$output/Model3.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
 
 
 ***********************************************************************************************************
 **************************************** Compare model fit ************************************************
 ***********************************************************************************************************
-foreach var of varlist Log_MVL PDV TI {
-  eststo `var'_only: stcox `var', noshow
-  eststo `var'_prev: stcox `var' $prev,  noshow
+global cvlonly ""
+foreach var of global CVL {
+  qui eststo `var'_only: stcox `var', noshow
+  qui eststo `var'_prev: stcox `var' $prev,  noshow
+  global cvlonly  $cvlonly `var'_only 
 } 
-eststo Prev: stcox $prev , noshow
+eststo Prev: qui stcox $prev , noshow
 
 ** Compute AIC = -2ln L + 2(k+c), k is model parameters
 mat AIC = J(4, 4, .)
 ** Get the model with no HIV prevalence
 local i = 1
-foreach mod in  Prev Log_MVL_only PDV_only TI_only {
+foreach mod in  Prev $cvlonly {
   dis as text "=========== Showing AIC for `mod'"
   est restore `mod'
   mat AIC[`i', 1] = -2*`=e(ll)' + 2*(`=e(df_m)' + 1)
 local ++i
 }
 
-lrtest  Log_MVL_only Log_MVL_prev, force
+lrtest  G_MVL_only G_MVL_prev, force
 mat AIC[2, 2] = r(p)
 lrtest  PDV_only PDV_prev, force
 mat AIC[3, 2] = r(p)
@@ -108,13 +113,15 @@ mat list AIC
 
 
 ** PVL with prevalence
-foreach var of varlist Log_PVL P_PDV P_TI {
-  eststo `var'_only: stcox `var', noshow
-  eststo `var'_prev: stcox  `var' $prev  , noshow
+global pcvlonly ""
+foreach var of global PCVL {
+  qui eststo `var'_only: stcox `var', noshow
+  qui eststo `var'_prev: stcox  `var' $prev  , noshow
+  global pcvlonly  $pcvlonly `var'_only 
 } 
 
 local i = 1
-foreach mod in  Prev Log_PVL_only P_PDV_only P_TI_only {
+foreach mod in  Prev $pcvlonly {
   dis as text "=========== Showing AIC for `mod'"
   est restore `mod'
   mat AIC[`i', 3] = -2*`=e(ll)' + 2*(`=e(df_m)' + 1)
@@ -122,7 +129,7 @@ local ++i
 }
 
 
-lrtest  Log_PVL_only Log_PVL_prev, force
+lrtest  G_PVL_only G_PVL_prev, force
 mat AIC[2, 4] = r(p)
 lrtest  P_PDV_only P_PDV_prev, force
 mat AIC[3, 4] = r(p)
@@ -183,6 +190,6 @@ mat Out1 =  TI_q \ P_TI_q
 mat2txt  , matrix(Out1) saving("$output/coefTI.txt") replace
 
 
-pwcorr Log_PVL FVL, sig
+pwcorr G_PVL G_FVL, sig
 pwcorr P_PDV FVL_PDV, sig
 pwcorr P_TI FVL_TI, sig
