@@ -32,12 +32,16 @@ collapse (count) N=IIntID, by(AgeGrp1)
 tempfile PopStand
 save "`PopStand'" 
 
-use "$derived/cvl-analysis2", clear
-keep IIntID AgeGrp1 
+use "`DiegoData'", clear
+keep if Data=="CVL"
+rename  AgeGrp AgeGrp1
 collapse (count) n=IIntID, by(AgeGrp1)
-merge 1:1 AgeGrp1 using "`PopStand'"
+merge 1:1 AgeGrp1 using "`PopStand'" , nogen
 gen Weight = N/n
 gen fpc = 1/Weight
+egen Total = total(N) 
+gen pWeight = N/Total
+drop Total
 tempfile PopWeights
 save "`PopWeights'" 
 
@@ -56,16 +60,9 @@ foreach var of local vars {
   gen ID = _n
   qui stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
     origin(EarliestHIVNegative) scale(365.25) exit(EndDate) id(ID)
-  qui sum `var', d
-  local p50 = r(p50)
-  local p25 = r(p25)
-  local p75 = r(p75)
   qui egen Q = xtile(`var'), n(4)
   strate Q Female, per(100) output("$output/`var'", replace)
   use "$output/`var'", clear
-  gen p50 = `p50'
-  gen p25 = `p25'
-  gen p75 = `p75'
   gen Label = "`var'"
   rename _Rate rate
   rename  _Lower lb
@@ -80,32 +77,29 @@ foreach var of local vars {
 use "`QDat'", clear
 drop in 1
 drop x _*
-sort Label Female Q
-export delimited using "$output\StdQuartile.txt", delimiter(tab) replace
+outsheet * using "$output\StdQuartile.txt", replace
+** outsheet * using "$output\StdQuartileNoFEM.txt", replace
 
+***********************************************************************************************
+**************************************** Calc estimates ***************************************
+***********************************************************************************************
 use "$derived/cvl-analysis2", clear
+gen ID = _n
+stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
+  origin(EarliestHIVNegative) scale(365.25) exit(EndDate) id(ID)
 gen PTime = (EndDate - EarliestHIVNegative)/365.25
+keep IIntID SeroConvertEvent Female AgeGrp1 PTime $CVL _*
 global CVL G_MVL G_PVL PDV P_PDV TI P_TI
-keep IIntID SeroConvertEvent Female PTime AgeGrp1 $CVL
+
+
 merge m:1 AgeGrp1 using "`PopWeights'", nogen
-
-
 foreach var of global CVL {
   capture drop Q_`var'
   dis as text "=============> `var'"
   egen Q_`var' = xtile(`var'), n(4)
   svyset IIntID [pweight=Weight], strata(Q_`var') vce(linearized) singleunit(missing) 
   svy: ratio (SeroConvertEvent/PTime), stdize(AgeGrp1) stdweight(Weight) over(Q_`var')
+  strate Q_`var' Female , per(100)
 }
-
-
-svyset IIntID [pweight=Weight], strata(Q_G_MVL) vce(linearized) singleunit(missing)
-svy linearized : ratio (SeroConvertEvent/PTime), stdize(AgeGrp1) stdweight(Weight) over(Q_G_MVL)
-
-collapse (sum) SeroConvertEvent PTime, by(Q_G_MVL)
-gen test = SeroConvertEvent/PTime
-list * 
-
-
 
 

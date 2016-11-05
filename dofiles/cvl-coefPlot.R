@@ -8,8 +8,8 @@ output  =  file.path(root, "output")
 
 mat <- read.table(file.path(output, "StdQuartile.txt"), header=TRUE)
 mat <- transform(mat, Q=ifelse(Female==1, Q - 0.15, Q + 0.15))
-MVL <- mat[mat$Label=="Log_MVL", ]
-PMVL <- mat[mat$Label=="Log_PVL", ]
+MVL <- mat[mat$Label=="G_MVL", ]
+PMVL <- mat[mat$Label=="G_PVL", ]
 PDV <- mat[mat$Label=="PDV", ]
 PPDV <- mat[mat$Label=="P_PDV", ]
 TI <- mat[mat$Label=="TI", ]
@@ -22,8 +22,7 @@ scols <- c(rep(cols[1], len),rep(cols[2], len))
 
 coefPlot <- function(
   mat, pmain, 
-  ylim2=c(0, 6),
-  ltext) {
+  ylim2=c(0, 6)) {
   par(mar=c(3.5,2.4,2.6,0.1))
   Ylab="Seroconversion rate per 100 person-years"
   with(mat, 
@@ -36,9 +35,6 @@ coefPlot <- function(
     xaxt="n", bty="n"))
   axis(1, at=c(1:4))
   axis(2, at=c(1:6))
-  text(2.5, 0, paste("Note: IQR", 
-    round(mat$p25[1],2), "-", round(mat$p75[1],2),
-    ltext))
 }
 
 png(file=file.path(output, "CVL_quant.png"), 
@@ -47,12 +43,17 @@ par(oma=c(0.0, 3.0, 0.3,0.2))
 nf <- layout(matrix(c(1:6,rep(7, 3)), ncol=3, byrow=TRUE),
   heights=c(6, 6, 1.0))
 layout.show(nf)
-coefPlot(MVL, "A:   Log mean viral load (HIV+ only)", ltext="copies/mL")
-coefPlot(PDV, "B:   Percent detectable virus (HIV+ only)", ltext="%")
-coefPlot(TI, "C:   Transmission index (HIV+ only)", ltext="events/100 acts")
-coefPlot(PMVL, "D:   Log mean viral load (HIV+ and HIV-)", ltext="copies/mL")
-coefPlot(PPDV, "E:   Percentage detectable virus (HIV+ and HIV-)", ltext="%")
-coefPlot(PTI, "F:   Transmission index (HIV+ and HIV-)", ltext="events/100 acts")
+cti <- "Community Transmission Index"
+pdv <- "Percent detectable virus"
+gvl <- "Geometric mean viral load"
+hiv1 <- "(HIV+ only)"
+hiv2 <- "(HIV+ and HIV-)"
+coefPlot(MVL, pmain=paste("A:   ", gvl, hiv1))
+coefPlot(PDV, pmain=paste("B:   ", pdv, hiv1))
+coefPlot(TI,  pmain=paste("C:   ", cti, hiv1))
+coefPlot(PMVL, pmain=paste("D:  ", gvl, hiv2))
+coefPlot(PPDV, pmain=paste("E:  ", pdv, hiv2))
+coefPlot(PTI,  pmain=paste("F:  ", cti, hiv2))
 plot(1,1,type="n", xlab='', ylab='', axes=FALSE)
 legend("bottom", bty="n",  
   c("Females  ", "Males"), cex=1.5,
@@ -62,65 +63,35 @@ mtext("Seroconversions per 100 person-years", line=1, cex=1, side=2, outer=TRUE,
 mtext("Quartile", line=-7, side=1, outer=TRUE, at=0.5, cex=1)
 dev.off()
 
+###############################################################################################
+######################################## No SEX ###############################################
+###############################################################################################
+mat <- read.table(file.path(output, "StdQuartileNoFEM.txt"), header=TRUE)
 
+MVL <- mat[mat$Label %in% c("G_MVL", "G_PVL"), ]
+MVL <- transform(MVL, Q=ifelse(Label=="G_MVL", Q - 0.15, Q + 0.15))
+PDV <- mat[mat$Label %in% c("PDV", "P_PDV"),  ]
+PDV <- transform(PDV, Q=ifelse(Label=="PDV", Q - 0.15, Q + 0.15))
+TI <- mat[mat$Label %in% c("TI", "P_TI"), ]
+TI <- transform(TI, Q=ifelse(Label=="TI", Q - 0.15, Q + 0.15))
 
-
-HR <- read.table(file.path(output, "coefHR.txt"))
-HR$Q <- c(c(2,1,3) - 0.15, c(2, 1, 3) + 0.15)
-HR <- transform(HR, p=ifelse(pvalue<0.01, "<0.01", round(pvalue, 2)))
-HR <- transform(HR, p=round(pvalue, 3))
-len = 3
-scex <- c(rep(1, len), rep(1, len))
-cols <- c('dodgerblue4', 'indianred4')
-scols <- c(rep(cols[1], len),rep(cols[2], len))
-
-coefPlot <- function(mat, pmain, fname="", ylim2=6) {
-  par(mar=c(3.5,2.4,2.6,1.1))
-  png(file=file.path(output, paste0(fname, "_HR.png")))
-  Ylab="Hazard Ratio"
-  with(mat, 
-    plotCI(Q, b, ui=ul, li=ll,
-    ylim=c(0.90, 1.3),
-    xlim=c(0.8, 3.3),
-    main=pmain, lwd=2, cex=1, pch=19, 
-    col=scols, 
-    xlab="", 
-    ylab=Ylab,
-    xaxt="n", bty="n"))
-  axis(1, at=c(1:3), labels=c("PDV", "MVL", "TI"))
-  with(mat, text(Q, b, p, pos=4, cex=0.8))
-  legend("top", bty="n",  
-  c("HIV+ Only", "HIV+ and HIV-"), cex=1.0,
-  ncol=2, lty=1, pt.cex=1.5, lwd=2, pch=20, col=cols)
-  abline(h=1.0, lty=2, col="gray")
-  dev.off()
-}
-coefPlot(HR, "Comparison of CVL Measures: Hazard Ratios and CIs ", fname="HR")
-
-
-TI <- read.table(file.path(output, "coefTI.txt"))
-TI$Q <- c(c(1:3) - 0.15, c(1:3) + 0.15)
-coefPlot <- function(mat, pmain, fname="", ylim2=6) {
-  par(mar=c(3.5,2.4,2.6,1.1))
-  png(file=file.path(output, paste0(fname, "_HR.png")))
-  Ylab="Hazard Ratio"
-  with(mat, 
-    plotCI(Q, b, ui=ul, li=ll,
-    ylim=c(0.60, 1.9),
-    xlim=c(0.8, 3.4),
-    main=pmain, lwd=2, cex=1, pch=19, 
-    col=scols, 
-    xlab="Quartile (Ref: 1st Quartile)", 
-    ylab=Ylab,
-    xaxt="n", bty="n"))
-  axis(1, at=c(1:3), labels=c(2:4))
-  with(mat, text(Q, b, round(pvalue, 3), pos=4, cex=0.8))
-  legend("top", bty="n",  
-  c("HIV+ Only", "HIV+ and HIV-"), cex=1.0,
-  ncol=2, lty=1, pt.cex=1.5, lwd=2, pch=20, col=cols)
-  abline(h=1.0, lty=2, col="gray")
-  dev.off()
-}
-coefPlot(TI, "Transmission Index: Hazard ratios by Quartile", fname="TI")
-
-
+png(file=file.path(output, "CVL_quantNoSEX.png"), 
+  units="in", width=10, height=10, pointsize=10, res=300, type="cairo")
+par(oma=c(0.0, 3.0, 0.3,0.2))  
+nf <- layout(matrix(c(1:3,rep(4, 3)), ncol=3, byrow=TRUE),
+  heights=c(6, 1.0))
+layout.show(nf)
+gvl <- "Geometric mean viral load"
+hiv1 <- "(HIV+ only)"
+hiv2 <- "(HIV+ and HIV-)"
+coefPlot(MVL,  pmain= gvl)
+coefPlot(PDV,  pmain= pdv)
+coefPlot(TI,   pmain= cti)
+plot(1,1,type="n", xlab='', ylab='', axes=FALSE)
+legend("bottom", bty="n",  
+  c(HIV1  , HIV2), cex=1.5,
+  ncol=2, lty=1, pt.cex=1.5, lwd=2, pch=20, col=cols,
+  inset=c(3.8,  -1.2))
+mtext("Seroconversions per 100 person-years", line=1, cex=1, side=2, outer=TRUE, at=0.55)
+mtext("Quartile", line=-7, side=1, outer=TRUE, at=0.5, cex=1)
+dev.off()

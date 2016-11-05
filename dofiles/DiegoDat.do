@@ -94,6 +94,7 @@ outsheet using "$derived\Ind_PVL_`Dat'_$today.xls", replace
 ** Note 28Jul2016: New data for Diego, give survey data linked to BS
 use "`Diego'", clear
 merge 1:m IIntID using "$derived/PVL2011", nogen keepusing(Data ViralLoad) keep(match)
-drop AgeGrp
+tempfile DiegoData
+save "`DiegoData'" 
 outsheet using "$derived\VL_Ind.xls", replace
 
