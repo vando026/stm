@@ -2,6 +2,10 @@
 ## Project: CVL
 ## Author: AV / Created: 28Sep2016 
 
+library(readstata13)
+library(foreign)
+library(plotrix)
+
 root  =  file.path(Sys.getenv("USERPROFILE"), "Dropbox/AfricaCentre/Projects/CommunityVL/")
 derived  =  file.path(root, "derived")
 output  =  file.path(root, "output")
@@ -95,3 +99,6 @@ legend("bottom", bty="n",
 mtext("Seroconversions per 100 person-years", line=1, cex=1, side=2, outer=TRUE, at=0.55)
 mtext("Quartile", line=-7, side=1, outer=TRUE, at=0.5, cex=1)
 dev.off()
+
+
+

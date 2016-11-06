@@ -77,8 +77,8 @@ foreach var of local vars {
 use "`QDat'", clear
 drop in 1
 drop x _*
+sort Label Female Q
 outsheet * using "$output\StdQuartile.txt", replace
-** outsheet * using "$output\StdQuartileNoFEM.txt", replace
 
 ***********************************************************************************************
 **************************************** Calc estimates ***************************************
@@ -99,7 +99,48 @@ foreach var of global CVL {
   egen Q_`var' = xtile(`var'), n(4)
   svyset IIntID [pweight=Weight], strata(Q_`var') vce(linearized) singleunit(missing) 
   svy: ratio (SeroConvertEvent/PTime), stdize(AgeGrp1) stdweight(Weight) over(Q_`var')
-  strate Q_`var' Female , per(100)
+  strate Q_`var' , per(100)
 }
 
+***********************************************************************************************
+**************************************** Direct Standard **************************************
+***********************************************************************************************
+clear
+set obs 1 
+gen x = 1
+tempfile QDat
+save "`QDat'" 
+
+local vars G_MVL PDV TI G_PVL P_TI P_PDV 
+foreach var of local vars {
+  use "$derived/cvl-analysis2", clear
+  gen ID = _n
+  qui stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
+    origin(EarliestHIVNegative) scale(365.25) exit(EndDate) id(ID)
+  qui egen Q = xtile(`var'), n(4)
+  strate Q AgeGrp1, per(100) output("$output/`var'", replace)
+  use "$output/`var'", clear
+  gen Label = "`var'"
+  rename _Rate rate
+  rename  _Lower lb
+  rename _Upper ub
+  tempfile Q`var'
+  save "`Q`var''" , replace
+  use "`QDat'", clear
+  append using "`Q`var''"
+  save "`QDat'", replace
+}
+
+use "`QDat'", clear
+drop in 1
+drop x _*
+merge m:1 AgeGrp1 using "`PopWeights'", nogen 
+sort Label AgeGrp1 Q 
+gen std_rate = rate * pWeight
+collapse (sum) std_rate, by(Label Q)
+tempfile StdWeights
+save "`StdWeights'" 
+** outsheet * using "$output\StdQuartile.txt", replace
+use "`StdWeights'", clear
+list *
 
