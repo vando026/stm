@@ -79,6 +79,7 @@ over50 <- transform(over50, Age = ifelse(Female==1, Age - 0.15, Age + 0.15))
 p50 <- subset(over50, Data=="CVL")
 f50 <- subset(over50, Data=='FVL')
 transform(p50, Ratio=Ratio(p50))
+transform(f50, Ratio=Ratio(f50))
 
 png(file=file.path(output, "P50.png"), 
   units="in", width=8, height=8, pointsize=14, res=300, type="cairo")
@@ -94,7 +95,7 @@ dev.off()
 
 png(file=file.path(output, "F50.png"), 
   units="in", width=8, height=8, pointsize=14, res=300, type="cairo")
-plotCVL(p50, main="",
+plotCVL(f50, main="",
   ylim2=c(0,1),
   ylab="Proportion >50,000 copies/mL ", cols=cols)
 axis(side=2, at = seq(0, 1, 0.2))

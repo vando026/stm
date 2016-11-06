@@ -12,11 +12,18 @@ keep BSIntID FVL* HIV_Prev
 tempfile HIVPrev
 save "`HIVPrev'" 
 
+import excel using "$source/Viral_load_estimation_Nov05.xls", clear firstrow 
+keep BSIntID G_FVL
+tempfile G_FVL
+save "`G_FVL'" 
+
+
 import excel using "$source/Viral_load_estimation_Oct22.xls", clear firstrow 
 merge 1:1 BSIntID using "`HIVPrev'" , nogen
+merge 1:1 BSIntID using "`G_FVL'", nogen
 
 ** I have to format vars from Diego file
-foreach var of varlist PDV - HIV_Prev {
+foreach var of varlist PDV - G_FVL {
   qui ds `var', has(type string)
   if "`=r(varlist)'" != "." {
     replace `var' = "" if `var'=="NA"
@@ -32,16 +39,9 @@ drop if BSIntID > 17884
 egen HIV_pcat = cut(HIV_Prev), at(0, 15, 25, 100) icode label
 tab HIV_pcat
 
-** the VL means are large, divide by 1000
-** foreach var of varlist G_MVL {
-**   sum `var'
-**   qui replace `var' = `var'/1000
-**   sum `var'
-** }
-
 encode(IsUrbanOrR) , gen(urban_ec)
 recode urban_ec (2=1) (1=2) (3=3), gen(urban)
-keep BSIntID PDV - urban
+keep BSIntID urban HIV_Prev HIV_pcat G_* PDV P_PDV TI P_TI FVL_PDV FVL_TI
 
 tempfile Point
 save "`Point'"
