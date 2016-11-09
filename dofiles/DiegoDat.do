@@ -66,6 +66,7 @@ drop if Data == "FVL"
 
 ** This gives number of negs and pos tested in 2011
 tab HIVResult 
+gen  HIVPositive2011 = cond(HIVResult==1, "Positive", "Negative")
 
 replace ViralLoad = 0 if HIVResult==0
 drop if missing(ViralLoad)
@@ -83,6 +84,11 @@ if "$dropNeg"=="Yes" {
 else {
   local Dat = "All"
 }
+
+
+tab Female
+tab AgeGrp
+tab Female AgeGrp, row
 
 outsheet using "$derived\Ind_PVL_`Dat'_$today.xls", replace
 
