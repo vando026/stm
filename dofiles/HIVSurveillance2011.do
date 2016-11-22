@@ -79,7 +79,7 @@ scalar StartTime = date("01-01-2011", "DMY")
 replace EarliestHIVNegative = StartTime 
 
 ** To draw a random seroconversion date between latest HIV negative and Earliest HIV positive. 
-set seed 2011
+set seed 2013
 gen DateSeroConvert = int((EarliestHIVPositive - LatestHIVNegative)*runiform() + LatestHIVNegative) if SeroConvertEvent==1
 format DateSeroConvert %td
 drop if DateSeroConvert < StartTime & SeroConvertEvent==1

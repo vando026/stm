@@ -63,7 +63,7 @@ qui stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
   origin(EarliestHIVNegative) scale(365.25) 
 
 ** Set covariates here once, so you dont have to do it x times for x models
-qui stcox P_MVL i.AgeGrp1 Female b3.urban ib1.Marital ib0.PartnerCat ib1.AIQ
+qui stcox G_PVL i.AgeGrp1 Female b3.urban ib1.Marital ib0.PartnerCat ib1.AIQ
 mat PMVL = r(table)
 qui stcox P_TI i.AgeGrp1 Female b3.urban ib1.Marital ib0.PartnerCat ib1.AIQ
 mat TI = r(table)

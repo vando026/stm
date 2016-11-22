@@ -6,9 +6,15 @@
 ***********************************************************************************************************
 **************************************** Bring in Datasets*************************************************
 ***********************************************************************************************************
+import excel using "$source/Viral_load_estimation_Nov21.xls", clear firstrow 
+keep BSIntID P_GVL P_PDV P_TI hiv8_2011_
+rename P_GVL G_PVL
+tempfile P_TI
+save "`P_TI'" 
+
 ** This brings in the FVL data
 import excel using "$source/Viral_load_estimation_Oct12.xls", clear firstrow 
-keep BSIntID FVL* HIV_Prev
+keep BSIntID FVL* 
 tempfile HIVPrev
 save "`HIVPrev'" 
 
@@ -19,11 +25,13 @@ save "`G_FVL'"
 
 
 import excel using "$source/Viral_load_estimation_Oct22.xls", clear firstrow 
+keep BSIntID IsUrbanOrR G_MVL PDV TI
 merge 1:1 BSIntID using "`HIVPrev'" , nogen
 merge 1:1 BSIntID using "`G_FVL'", nogen
+merge 1:1 BSIntID using "`P_TI'", nogen
 
 ** I have to format vars from Diego file
-foreach var of varlist PDV - G_FVL {
+foreach var of varlist * {
   qui ds `var', has(type string)
   if "`=r(varlist)'" != "." {
     replace `var' = "" if `var'=="NA"
@@ -35,13 +43,14 @@ foreach var of varlist PDV - G_FVL {
 drop if BSIntID > 17884
 
 ** Make HIV prev a percent
-** gen HIV_prev = hiv8_2011_ * 100
-egen HIV_pcat = cut(HIV_Prev), at(0, 15, 25, 100) icode label
+replace P_PDV = P_PDV * 100
+gen HIV_prev = hiv8_2011_ * 100
+egen HIV_pcat = cut(HIV_prev), at(0, 15, 25, 100) icode label
 tab HIV_pcat
 
 encode(IsUrbanOrR) , gen(urban_ec)
 recode urban_ec (2=1) (1=2) (3=3), gen(urban)
-keep BSIntID urban HIV_Prev HIV_pcat G_* PDV P_PDV TI P_TI FVL_PDV FVL_TI
+drop urban_ec IsUrbanOrR
 
 tempfile Point
 save "`Point'"

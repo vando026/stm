@@ -16,22 +16,23 @@ stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
 ** Set covariates here once, so you dont have to do it x times for x models
 global prev "i.HIV_pcat"
 global urban "ib1.urban"
-global vars "Female i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
+global vars "Female i.AgeGrp1 ib1.Marital ib0.PartnerCat ib1.AIQ"
 
 ***********************************************************************************************************
 **************************************** No Negatives *****************************************************
 ***********************************************************************************************************
-foreach var of varlist Log_MVL PDV TI {
+foreach var of varlist G_MVL PDV TI {
   dis as text _n "=========================================> Showing for `var'"
   stcox `var', noshow
-  stcox `var' $urban $vars, noshow
-  stcox `var'  $prev $urban $vars, noshow
+  stcox `var' $vars, noshow
+  ** stcox `var' $urban $vars, noshow
+  ** stcox `var' $prev $urban $vars, noshow
 } 
 
-foreach var of varlist P_MVL P_PDV P_TI G_PVL {
+foreach var of varlist G_PVL P_PDV P_TI {
   dis as text _n "=========================================> Showing for `var'"
-  ** stcox `var', noshow
-  ** stcox `var' $vars, noshow
+  stcox `var', noshow
+  stcox `var' $vars, noshow
   stcox `var' $urban $vars, noshow
   ** stcox `var' $prev $urban $vars, noshow
 } 
@@ -147,6 +148,9 @@ foreach var of varlist HIV_pcat Female AgeGrp1 urban Marital PartnerCat AIQ {
 stptime, by(Female) per(100)
 strate  Female , per(100) output("$output/test", replace) 
 
+{
+dd(2) yes 
+}
 
 mat define Out = J(1, 5, .)
 foreach var of varlist MVL PDV TI P_MVL P_PDV P_TI {

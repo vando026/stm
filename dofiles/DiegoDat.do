@@ -47,6 +47,10 @@ drop Keep
 drop Max* Episode* Exp* Sex
 egen AgeGrp = cut(Age), at(15, 20, 25, 30, 35, 40, 45, 100) icode label
 
+tab Female
+tab AgeGrp
+tab Female AgeGrp, row
+
 duplicates list IIntID 
 tempfile Diego
 save "`Diego'" 
@@ -54,15 +58,11 @@ save "`Diego'"
 ***********************************************************************************************************
 **************************************** VL data **********************************************************
 ***********************************************************************************************************
-global dropNeg = "No"
 use "`Diego'", clear
 merge 1:1 IIntID using "`HIV2011'", keepusing(HIVResult) nogen keep(match) 
 tab HIVResult
 
 merge 1:m IIntID using "$derived/PVL2011", nogen keepusing(Data ViralLoad) // keep(1 3)
-
-** Note 05Sep2016: Frank says to forget FVL for now
-drop if Data == "FVL"
 
 ** This gives number of negs and pos tested in 2011
 tab HIVResult 
@@ -70,6 +70,7 @@ gen  HIVPositive2011 = cond(HIVResult==1, "Positive", "Negative")
 
 replace ViralLoad = 0 if HIVResult==0
 drop if missing(ViralLoad)
+distinct IIntID 
 
 gen Quin = 0 if inrange(ViralLoad, 0 , 1550)
 replace Quin = 2.5 if inrange(ViralLoad, 1551, 3500) 
@@ -77,20 +78,9 @@ replace Quin = 12 if inrange(ViralLoad, 3501, 10000 )
 replace Quin = 13.5 if inrange(ViralLoad, 10001, 50000 ) 
 replace Quin = 23 if ViralLoad > 50000 & !missing(ViralLoad)
 
-if "$dropNeg"=="Yes" {
-  local Dat = "PosOnly"
-  drop if ViralLoad==0
-} 
-else {
-  local Dat = "All"
-}
+outsheet using "$derived\Ind_PVL_All_$today.xls", replace
 
 
-tab Female
-tab AgeGrp
-tab Female AgeGrp, row
-
-outsheet using "$derived\Ind_PVL_`Dat'_$today.xls", replace
 
 ***********************************************************************************************************
 **************************************** Quinn ************************************************************
