@@ -16,7 +16,7 @@ stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
 ** Set covariates here once, so you dont have to do it x times for x models
 global prev "i.HIV_pcat"
 global urban "ib1.urban"
-global vars "Female i.AgeGrp1 ib1.Marital ib0.PartnerCat ib1.AIQ"
+global vars "Female i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
 
 ***********************************************************************************************************
 **************************************** No Negatives *****************************************************
@@ -141,16 +141,45 @@ mat list AIC
 ***********************************************************************************************************
 **************************************** Table 2 incidence ************************************************
 ***********************************************************************************************************
+clear 
+set obs 1
+gen Var = .
+save "$output/IncidenceOut", replace
+use "$derived/cvl-analysis2", clear
+gen ID = _n
+stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
+  origin(EarliestHIVNegative) scale(365.25) exit(EndDate) id(ID)
+
+stptime, per(100)
+
 foreach var of varlist HIV_pcat Female AgeGrp1 urban Marital PartnerCat AIQ {
-  stptime , by(`var') per(100) dd(2) 
+  strate `var', per(100) output("$output/st_`var'", replace) 
+  preserve
+  use "$output/st_`var'", clear
+  rename `var' Var
+  gen VarLab = "`var'" 
+  sav "$output/st_`var'", replace
+  use "$output/IncidenceOut", clear
+  append using "$output/st_`var'" , force nolabel
+  sav "$output/IncidenceOut", replace
+  restore
 }
 
+use "$output/IncidenceOut", replace
+drop if missing(Var)
+replace _Y = _Y*100
+replace _Y = int(_Y)
+foreach var of varlist _Rate _Lower _Upper {
+  replace `var' = round(`var', 0.01) 
+}
+order VarLab, first
+export delimited using "$output\IncidenceOut.csv", replace
+
+***********************************************************************************************
+***********************************************************************************************
+***********************************************************************************************
 stptime, by(Female) per(100)
 strate  Female , per(100) output("$output/test", replace) 
-
-{
-dd(2) yes 
-}
 
 mat define Out = J(1, 5, .)
 foreach var of varlist MVL PDV TI P_MVL P_PDV P_TI {

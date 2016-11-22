@@ -9,6 +9,7 @@
 ** 2) transform quinn index
 ** 3) HIv negatives get assigned zero probability if they tested negative in 2011. for all data
 
+** This gives the prevalence
 use "$source/RD05-001_ACDIS_HIV", clear
 keep IIntID VisitDate HIVResult Sex
 keep if year(VisitDate) == 2011
