@@ -62,6 +62,7 @@ foreach var of local vars {
     origin(EarliestHIVNegative) scale(365.25) exit(EndDate) id(ID)
   qui egen Q = xtile(`var'), n(4)
   strate Q Female, per(100) output("$output/`var'", replace)
+  ** strate Q , per(100) output("$output/`var'", replace)
   use "$output/`var'", clear
   gen Label = "`var'"
   rename _Rate rate
@@ -77,6 +78,7 @@ foreach var of local vars {
 use "`QDat'", clear
 drop in 1
 drop x _*
+** outsheet * using "$output\StdQuartileNoFEM.txt", replace
 sort Label Female Q
 outsheet * using "$output\StdQuartile.txt", replace
 
@@ -143,4 +145,11 @@ save "`StdWeights'"
 ** outsheet * using "$output\StdQuartile.txt", replace
 use "`StdWeights'", clear
 list *
+
+/*
+egen QPDV = cut(P_PDV), at(0, 15, 20, 30, 100) icode
+strate QPDV, per(100)
+egen QPTI = cut(P_TI), at(0, 5, 6.5, 7.5, 100) icode
+strate QPTI, per(100)
+
 

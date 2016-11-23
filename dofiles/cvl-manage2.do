@@ -6,17 +6,17 @@
 ***********************************************************************************************************
 **************************************** Bring in Datasets*************************************************
 ***********************************************************************************************************
-import excel using "$source/Viral_load_estimation_Nov21.xls", clear firstrow 
-keep BSIntID P_GVL P_PDV P_TI hiv8_2011_
+import excel using "$source/Viral_load_estimation_Nov22.xls", clear firstrow 
+keep BSIntID GVL P_GVL P_PDV P_TI HIV_Prevalence 
 rename P_GVL G_PVL
-tempfile P_TI
-save "`P_TI'" 
+tempfile PVL
+save "`PVL'" 
 
 ** This brings in the FVL data
 import excel using "$source/Viral_load_estimation_Oct12.xls", clear firstrow 
 keep BSIntID FVL* 
-tempfile HIVPrev
-save "`HIVPrev'" 
+tempfile FVL
+save "`FVL'" 
 
 import excel using "$source/Viral_load_estimation_Nov05.xls", clear firstrow 
 keep BSIntID G_FVL
@@ -26,9 +26,9 @@ save "`G_FVL'"
 
 import excel using "$source/Viral_load_estimation_Oct22.xls", clear firstrow 
 keep BSIntID IsUrbanOrR G_MVL PDV TI
-merge 1:1 BSIntID using "`HIVPrev'" , nogen
+merge 1:1 BSIntID using "`PVL'" , nogen
+merge 1:1 BSIntID using "`FVL'", nogen
 merge 1:1 BSIntID using "`G_FVL'", nogen
-merge 1:1 BSIntID using "`P_TI'", nogen
 
 ** I have to format vars from Diego file
 foreach var of varlist * {
@@ -40,17 +40,24 @@ foreach var of varlist * {
 }
 
 ** No observations
-drop if BSIntID > 17884
+** drop if BSIntID > 17884
 
 ** Make HIV prev a percent
 replace P_PDV = P_PDV * 100
-gen HIV_prev = hiv8_2011_ * 100
-egen HIV_pcat = cut(HIV_prev), at(0, 15, 25, 100) icode label
+gen HIV_prev = HIV_Prevalence * 100
+egen HIV_pcat = cut(HIV_prev), at(0, 20, 30, 100) icode label
 tab HIV_pcat
 
+
 encode(IsUrbanOrR) , gen(urban_ec)
-recode urban_ec (2=1) (1=2) (3=3), gen(urban)
-drop urban_ec IsUrbanOrR
+tab urban_ec 
+gen Replace = 2+int((4-1)*runiform())
+replace urban_ec = Replace if urban_ec==1
+tab urban_ec 
+
+recode urban_ec (3=1) (1=2) (4=3), gen(urban)
+tab urban
+drop urban_ec IsUrbanOrR HIV_Prevalence Replace
 
 tempfile Point
 save "`Point'"

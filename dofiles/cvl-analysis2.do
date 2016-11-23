@@ -138,6 +138,14 @@ lrtest P_TI_only P_TI_prev, force
 mat AIC[4, 4] = r(p)
 mat list AIC
 
+
+***********************************************************************************************************
+**************************************** Correlaions ******************************************************
+***********************************************************************************************************
+pwcorr G_PVL G_FVL, sig
+pwcorr P_PDV FVL_PDV, sig
+pwcorr P_TI FVL_TI, sig
+
 ***********************************************************************************************************
 **************************************** Table 2 incidence ************************************************
 ***********************************************************************************************************
@@ -174,55 +182,3 @@ foreach var of varlist _Rate _Lower _Upper {
 }
 order VarLab, first
 export delimited using "$output\IncidenceOut.csv", replace
-
-***********************************************************************************************
-***********************************************************************************************
-***********************************************************************************************
-stptime, by(Female) per(100)
-strate  Female , per(100) output("$output/test", replace) 
-
-mat define Out = J(1, 5, .)
-foreach var of varlist MVL PDV TI P_MVL P_PDV P_TI {
-  dis as text _n "=========== `var'"
-  cap drop `var'_q
-  egen `var'_q = xtile(`var'), n(4)
-  forvalue m = 0/1 {
-    forvalue i = 1/4 {
-    qui stptime if `var'_q==`i' & Female==`m', per(100) dd(2) 
-      mat define `var'`i' = J(1, 5, .)
-      mat rownames `var'`i' = "`var'`i'`m'"
-      mat `var'`i'[1, 1] = `i'
-      mat `var'`i'[1, 2] = `m'
-      mat `var'`i'[1, 3] = r(rate) 
-      mat `var'`i'[1, 4] = r(lb)
-      mat `var'`i'[1, 5] = r(ub)
-      mat Out = Out \ `var'`i'
-    }
-  }
-}
-mat Out =  Out[2..., 1...]
-mat colnames Out = Q Female Rate lb ub
-mat2txt , matrix(Out) saving("$output/coefMat.txt") replace 
-
-
-***********************************************************************************************************
-**************************************** For plot of coeff ************************************************
-***********************************************************************************************************
-mat coef = MVL \ PDV\ TI\ P_MVL\ P_PDV\ P_TI
-mat2txt, matrix(coef) saving("$output/coefHR.txt") replace
-
-
-mat define Out1 = J(1, 5, .)
-foreach var of varlist TI_q P_TI_q {
-stcox ib1.`var' Female
-mat `var' = r(table)
-mat `var' = `var'[1..6,2..4]'
-mat list `var'
-}
-mat Out1 =  TI_q \ P_TI_q
-mat2txt  , matrix(Out1) saving("$output/coefTI.txt") replace
-
-
-pwcorr G_PVL G_FVL, sig
-pwcorr P_PDV FVL_PDV, sig
-pwcorr P_TI FVL_TI, sig
