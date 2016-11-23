@@ -57,9 +57,6 @@ format DateOfInitiationMin %td
 gen TestYear = year(TestDate)
 keep if inlist(TestYear, 2011)
 
-** Age
-keep if inrange(AgeTested, 15, 65)
-
 gen log10VL = log10(ViralLoad) 
 gen Over50k = cond(ViralLoad>=50000, 1, 0)
 
@@ -67,10 +64,18 @@ drop ACDIS_IIntID
 keep IIntID Sex TestDate TestYear ViralLoad AgeTested log10VL Over50k DateOfInitiationMin
 rename DateOfInitiationMin DateOfInitiation
 
-** Save datasets 
-distinct IIntID 
-gen Data = "FVL"
+** Ok, multiple VL by indiv
+bysort IIntID : egen VLmn = mean(ViralLoad)
+replace  VLmn = floor(VLmn)
+collapse (firstnm) ViralLoad = VLmn AgeTested Sex, by(IIntID)
 
+bysort IIntID: egen Age1 = min(AgeTested)
+
+egen AgeTestedVL = cut(Age1), at(15, 20, 25, 30, 35, 40, 45, 100) icode label
+gen Female = (Sex==2)
+
+drop Sex Age1 AgeTested
+gen Data = "FVL"
 tempfile FVLdat
 save "`FVLdat'" 
 
@@ -116,7 +121,6 @@ save "`CVLdat'"
 **************************************** Merge CVL and FVL data *******************************************
 ***********************************************************************************************************
 use "`FVLdat'", clear
-append using "`CVLdat'"
 
 ** Ok, multiple VL by indiv
 bysort IIntID Data: egen VLmn = mean(ViralLoad)
@@ -131,7 +135,7 @@ gen Female = (Sex==2)
 drop Sex Age1 AgeTested
 gen VLSuppressed = (ViralLoad<1500)
 
-saveold "$derived/PVL2011", replace
+saveold "`FVLdat", replace
 
 
 

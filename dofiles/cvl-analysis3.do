@@ -7,36 +7,15 @@
 **************************************** Get populations weights ******************************************
 ***********************************************************************************************************
 ** Only for 2011?
-use "$source/RD02-002_Demography", clear
-
-** Dont need any obs other than 2011
-keep BSIntID IIntID ExpYear
-** Resident in BS in this year, drop if not
-drop if missing(BSIntID)
-duplicates drop IIntID, force 
-keep if inrange(ExpYear, 2004, 2015)
-
-** You must run cvl-manage2.do first
-merge m:1 IIntID using "`Individuals'",  keep(match)
-
-gen Keep = . 
-replace Keep = 1 if inrange(Age, 15, 55) & Female == 0
-replace Keep = 1 if inrange(Age, 15, 50) & Female == 1
-keep if Keep == 1
-drop Keep
-
-** Make Age Category 
-egen AgeGrp1 = cut(Age), at(15(5)45, 100) label icode
-keep IIntID AgeGrp1 Female
-collapse (count) N=IIntID, by(AgeGrp1)
+use "`Diego'", clear
+collapse (count) N=IIntID, by(AgeGrp1 Female)
 tempfile PopStand
 save "`PopStand'" 
 
-use "`DiegoData'", clear
-keep if Data=="CVL"
-rename  AgeGrp AgeGrp1
-collapse (count) n=IIntID, by(AgeGrp1)
-merge 1:1 AgeGrp1 using "`PopStand'" , nogen
+use "$derived/cvl-analysis2", clear
+duplicates drop IIntID, force  
+collapse (count) n=IIntID, by(AgeGrp1 Female)
+merge 1:1 Female AgeGrp1 using "`PopStand'" , nogen
 gen Weight = N/n
 gen fpc = 1/Weight
 egen Total = total(N) 
