@@ -100,6 +100,7 @@ gen TestYear = year(TestDate)
 merge m:1 IIntID using "`Individuals'" , keep(match) nogen
 
 gen Age = int((TestDate - DateOfBirth)/365.25) 
+egen AgeGrp = cut(Age), at(15, 20, 25, 30, 35, 40, 45, 55, 150) icode label
 
 set seed 339487731
 gen RandomUndetectable =int(1500*runiform()) if vlbelowldl == "Yes"
@@ -110,7 +111,7 @@ drop if missing(ViralLoad)
 gen log10VL = log10(ViralLoad)
 gen Over50k = cond(ViralLoad>=50000, 1, 0)
 
-keep IIntID Female TestDate TestYear ViralLoad Age log10VL Over50k
+keep IIntID Female TestDate TestYear ViralLoad Age* log10VL Over50k
 gen Data = "CVL"
 
 tempfile CVLdat
