@@ -83,7 +83,8 @@ save "`FVLdat'"
 ********************************************* Community VL ************************************************
 ***********************************************************************************************************
 use "$source/RD01-01_ACDIS_Individuals", clear
-keep IIntID DateOfBirth 
+gen Female = (Sex==2)
+keep IIntID DateOfBirth Female 
 duplicates drop IIntID, force
 tempfile Individuals
 save "`Individuals'"
@@ -96,11 +97,9 @@ rename datereceivedatacvl TestDate
 gen TestYear = year(TestDate)
 
 ** Get Sex and other  vars
-merge m:1 IIntID using "`Demo'" , keep(match) nogen keepusing(Sex)
 merge m:1 IIntID using "`Individuals'" , keep(match) nogen
-merge m:1 IIntID using "`ARTDate'" , keep(1 3) nogen 
 
-gen AgeTested = int((TestDate - DateOfBirth)/365.25) 
+gen Age = int((TestDate - DateOfBirth)/365.25) 
 
 set seed 339487731
 gen RandomUndetectable =int(1500*runiform()) if vlbelowldl == "Yes"
@@ -111,7 +110,7 @@ drop if missing(ViralLoad)
 gen log10VL = log10(ViralLoad)
 gen Over50k = cond(ViralLoad>=50000, 1, 0)
 
-keep IIntID Sex TestDate TestYear ViralLoad AgeTested DateOfInitiation log10VL Over50k
+keep IIntID Female TestDate TestYear ViralLoad Age log10VL Over50k
 gen Data = "CVL"
 
 tempfile CVLdat
