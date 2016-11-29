@@ -6,15 +6,15 @@
 ***********************************************************************************************************
 **************************************** Bring in Datasets*************************************************
 ***********************************************************************************************************
-import excel using "$source/Viral_load_estimation_Nov22.xls", clear firstrow 
-keep BSIntID GVL P_GVL P_PDV P_TI HIV_Prevalence 
+import excel using "$source/Viral_load_estimation_Nov28_DROPVARS.xls", clear firstrow 
+keep BSIntID P_GVL P_PDV P_TI HIV_Prevalence 
 rename P_GVL G_PVL
 tempfile PVL
 save "`PVL'" 
 
 ** This brings in the FVL data
 import excel using "$source/Viral_load_estimation_Oct12.xls", clear firstrow 
-keep BSIntID FVL* 
+keep BSIntID FVL_* 
 tempfile FVL
 save "`FVL'" 
 
@@ -45,7 +45,7 @@ foreach var of varlist * {
 ** Make HIV prev a percent
 replace P_PDV = P_PDV * 100
 gen HIV_prev = HIV_Prevalence * 100
-egen HIV_pcat = cut(HIV_prev), at(0, 20, 30, 100) icode label
+egen HIV_pcat = cut(HIV_prev), at(0, 15, 30, 100) icode label
 tab HIV_pcat
 
 
@@ -57,6 +57,8 @@ tab urban_ec
 
 recode urban_ec (3=1) (1=2) (4=3), gen(urban)
 tab urban
+label define LblRural 1 "Rural" 2 "Peri" 3 "Urban"
+label values urban LblRural
 drop urban_ec IsUrbanOrR HIV_Prevalence Replace
 
 tempfile Point

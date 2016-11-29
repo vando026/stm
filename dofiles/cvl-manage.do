@@ -117,25 +117,6 @@ gen Data = "CVL"
 tempfile CVLdat
 save "`CVLdat'" 
 
-***********************************************************************************************************
-**************************************** Merge CVL and FVL data *******************************************
-***********************************************************************************************************
-use "`FVLdat'", clear
-
-** Ok, multiple VL by indiv
-bysort IIntID Data: egen VLmn = mean(ViralLoad)
-replace  VLmn = floor(VLmn)
-collapse (firstnm) ViralLoad = VLmn AgeTested Sex, by(IIntID Data )
-
-bysort IIntID: egen Age1 = min(AgeTested)
-
-egen AgeTestedVL = cut(Age1), at(15, 20, 25, 30, 35, 40, 45, 100) icode label
-gen Female = (Sex==2)
-
-drop Sex Age1 AgeTested
-gen VLSuppressed = (ViralLoad<1500)
-
-saveold "`FVLdat", replace
 
 
 
