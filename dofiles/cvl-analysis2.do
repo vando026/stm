@@ -29,10 +29,10 @@ foreach var of varlist G_MVL PDV TI {
   ** stcox `var' $prev $urban $vars, noshow
 } 
 
-foreach var of varlist G_PVL P_PDV P_TI {
+foreach var of varlist P_PDV P_TI {
   dis as text _n "=========================================> Showing for `var'"
-  stcox `var', noshow
-  ** stcox `var' $vars, noshow
+  ** stcox `var', noshow
+  stcox `var' $vars, noshow
   ** stcox `var' $urban $vars, noshow
   ** stcox `var' $prev $urban $vars, noshow
 } 

@@ -6,8 +6,8 @@
 ***********************************************************************************************************
 **************************************** Bring in Datasets*************************************************
 ***********************************************************************************************************
-import excel using "$source/Viral_load_estimation_Nov28_DROPVARS.xls", clear firstrow 
-keep BSIntID P_GVL P_PDV P_TI HIV_Prevalence 
+import excel using "$source/Viral_load_estimation_Nov22.xls", clear firstrow 
+keep BSIntID Longitude Latitude IsUrbanOrR P_GVL P_PDV P_TI HIV_Prevalence 
 rename P_GVL G_PVL
 tempfile PVL
 save "`PVL'" 
@@ -39,13 +39,16 @@ foreach var of varlist * {
   }
 }
 
+insheet using "$source/VL_Estimation_30_Nov_2016.csv", clear comma case
+merge 1:1 BSIntID using "`PVL'", keepusing(IsUrbanOrR) keep(match)
 ** No observations
 ** drop if BSIntID > 17884
 
 ** Make HIV prev a percent
 replace P_PDV = P_PDV * 100
-gen HIV_prev = HIV_Prevalence * 100
-egen HIV_pcat = cut(HIV_prev), at(0, 15, 30, 100) icode label
+replace P_TI = P_TI * 100
+replace HIV_Prev = HIV_Prev * 100
+egen HIV_pcat = cut(HIV_Prev), at(0, 15, 30, 100) icode label
 tab HIV_pcat
 
 
@@ -59,7 +62,7 @@ recode urban_ec (3=1) (1=2) (4=3), gen(urban)
 tab urban
 label define LblRural 1 "Rural" 2 "Peri" 3 "Urban"
 label values urban LblRural
-drop urban_ec IsUrbanOrR HIV_Prevalence Replace
+drop urban_ec IsUrbanOrR Replace
 
 tempfile Point
 save "`Point'"
@@ -261,10 +264,10 @@ drop Keep
 ** Make Age Category 
 egen AgeGrp1 = cut(Age), at(15(5)45, 100) label icode
 
-foreach var of varlist PDV - AgeGrp1 {
-  qui keep if !missing(`var')
-    ** dis as text `var' 
-}
+** foreach var of varlist PDV - AgeGrp1 {
+**   qui keep if !missing(`var')
+**     ** dis as text `var' 
+** }
 
 saveold "$derived/cvl-analysis2", replace
 

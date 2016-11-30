@@ -74,7 +74,7 @@ sum DetectViremia
 gen log10VL = log10(ViralLoad)
 gen _TR = (2.45)^(log10VL - log10(150))
 gen _beta = 0.003 * _TR
-gen TransIndex = (1-[1- _beta]^100)*100
+gen TransIndex = (1-[1- _beta]^100)
 replace TransIndex = 0 if missing(TransIndex)
 sum TransIndex 
 
@@ -87,7 +87,7 @@ set seed 10000
 replace Longitude = Longitude + (runiform()/1000) if _BSTag > 0
 replace Latitude = Latitude + (runiform()/1000) if _BSTag > 0
 duplicates list Latitude Longitude
-drop _*
+keep BSIntID Longitude Latitude ViralLoad DetectViremia TransIndex fweight
 
 outsheet using "$derived\Ind_PVL_All_$today.csv", replace comma
 

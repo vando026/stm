@@ -11,6 +11,7 @@ dofile <- file.path(fpath, "dofiles")
 Source <- file.path(fpath, "source")
 derived <- file.path(fpath, "derived")
 output  <- file.path(fpath, "output")
+today <- format(Sys.time(), "%d_%b_%Y")
 
 ###############################################################################################
 ######################################## Library ##############################################
@@ -37,57 +38,50 @@ ipolate <- function(
   if (is.null(newname)) 
     newname <-  cvlname
 
-  doCords <- function(
-    cdat, xx=x, yy=y) {
-    # Get range of coords
-    long <- cdat[[xx]]
-    lat <- cdat[[yy]]
-    xmin <- min(long); xmax <- max(long)
-    ymin <- min(lat); ymax <- max(lat)
-    cout <- list(
-      long=long, lat=lat, 
-      xmin=ymin, xmax=xmax,
-      ymin=ymin, ymax=ymax)
-    return(cout)
-  }
-  #get coords for input dataset
-  ds <- doCords(dat) 
-  #get coords for predicted dataset
-  bs <- doCords(bsdat) 
-  
-  # Set the paramters for imput dataset
-  ds_params <- list(
-    x=ds$long, y=ds$lat,
-    xrange=c(ds$xmin, ds$xmax),
-    yrange=c(ds$ymin, ds$ymax))
+  # set the vars
+  long <- dat[[x]]
+  lat <- dat[[y]]
+  bslong <- bsdat[[x]]
+  bslat <- bsdat[[y]]
+  # get the min/max ranges of the coords
+  allx <- c(bslong, long)
+  ally <- c(bslat, lat)
+  xmin <- min(allx); xmax <- max(allx)
+  ymin <- min(ally); ymax <- max(ally)
 
-  # Set parameters for predicted dataset
-  bs_params <- list(
-    x=bs$long, y=bs$lat,
-    xrange=c(bs$xmin, bs$xmax),
-    yrange=c(bs$ymin, bs$ymax))
+  # Set the paramters for imput dataset
+  params <- list(
+    x=long, y=lat,
+    xrange=c(xmin, xmax),
+    yrange=c(ymin, ymax))
 
   # Create the ppp object for input dataset
-  ds_set <- do.call(ppp, 
-    c(ds_params, list(marks = cvlvar)))
-
-  # Create ppp object for predicted dataset
-  bs_set <- do.call(ppp, bs_params)
+  set <- do.call(ppp, 
+    c(params, list(marks = cvlvar)))
 
   # Now smooth over input dataset
-  sfun <- Smoothfun(ds_set, 
+  sfun <- Smoothfun(set, 
     weights=weightname,
     at="points")
 
+# browser()
   # and get predicted values at all BSIntID
-  bs_predict <- sfun(coords(bs_set))
-  names(bs_predict) <- newname
+  mat <- matrix(ncol=4, nrow=nrow(bsdat))
+  for (i in seq(nrow(bsdat))) {
+    bsrow <- bsdat[i, ]
+    list2env(bsrow, envir=environment())
+    mat[i, 1] <- BSIntID
+    mat[i, 2] <- Longitude
+    mat[i, 3] <- Latitude
+    mat[i, 4] <- sfun(Longitude, Latitude)
+  }
+  out <- as.data.frame(mat)
+  names(out) <- c("BSIntID", x, y, newname)
   cat(paste('Summary of ', newname,': \n'))
-  print(summary(bs_predict))
-  out <- cbind(coords(bs_set), bs_predict)
+  print(summary(out[[newname]]))
   return(out)
 }
-debugonce(ipolate)
+# debugonce(ipolate)
 
 ###############################################################################################
 ######################################## Analysis #############################################
@@ -95,15 +89,18 @@ debugonce(ipolate)
 dat <- read.csv(file.path(derived, "Ind_PVL_All_30Nov2016.csv")) 
 bsdat <- read.csv(file.path(derived, "BSIntID_Coords.csv")) 
 pvl <- ipolate(dat, bsdat, cvlname="ViralLoad", newname="PVL")
-ppdv <- ipolate(dat, cvlname="DetectViremia", newname="P_PDV")
-pcti <- ipolate(dat, cvlname="TransIndex", newname="P_TI")
-hiv_prev <- ipolate(dat, cvlname="HIVResult", newname="HIV_Prev")
+ppdv <- ipolate(dat, bsdat, cvlname="DetectViremia", newname="P_PDV")
+pcti <- ipolate(dat, bsdat, cvlname="TransIndex", newname="P_TI")
+hiv_prev <- ipolate(dat, bsdat, cvlname="HIVResult", newname="HIV_Prev")
 
 # lets merge vars
-cvars <- c("Latitude", "Longitude")
+cvars <- c("BSIntID", "Longitude", "Latitude")
 ndat <- merge(bsdat, pvl, by=cvars, all.x=TRUE)
+ndat <- merge(ndat, ppdv, by=cvars, all.x=TRUE)
+ndat <- merge(ndat, pcti, by=cvars, all.x=TRUE)
+ndat <- merge(ndat, hiv_prev, by=cvars, all.x=TRUE)
 ndat <- ndat[order(ndat$BSIntID), ]
-
+write.csv(ndat, file.path(Source, paste0('VL_Estimation_', today, '.csv')), row.names=FALSE)
 
 
 ###############################################################################################
