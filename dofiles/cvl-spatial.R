@@ -33,12 +33,65 @@ params <- list(
   yrange=c(ymin, ymax))
 
 setPPDV <- do.call(ppp, c(params, list(marks = dat$Over1500)))
-PPDV <- Smoothfun(setPPDV, at="points")
-dat$PPDV=est(coords(setPPDV))
+funPPDV <- Smoothfun(setPPDV, at="points")
+PPDV=funPPDV(coords(setPPDV))
+
+ppdv <- cbind(coords(setPPDV), PPDV)
 summary(dat$PPDV)
 
 
 setCTI <- do.call(ppp, c(params, list(marks = dat$Quin)))
+
+
+ipolate <- function(dat,
+  x="Longitude",
+  y="Latitude",
+  cvlname="ViralLoad", 
+  weightname=NULL,
+  sigma=NULL) {
+
+  # Make vars
+  long <- dat[[x]]
+  lat <- dat[[y]]
+  cvlname <- dat[[cvlname]]
+  if (!is.null(weightname)) 
+    weightname <- dat[[weightname]]
+
+  # Get range of coords
+  xmin <- min(long)-0.1
+  xmax <- max(long)+0.1
+  ymin <- min(lat)-0.1
+  ymax <- max(lat)+0.1
+  
+  # Set the paramters for ppp object
+  params <- list(
+    x=long, y=lat,
+    xrange=c(xmin, xmax),
+    yrange=c(ymin, ymax))
+
+  # Create the ppp object
+  set <- do.call(ppp, 
+    c(params, 
+    list(marks = cvlname)))
+
+  sfun <- Smoothfun(set, 
+    weights=weightname,
+    at="points")
+  # predicted values at the coords
+  predict <- sfun(coords(set))
+  out <- cbind(coords(set), predict)
+  return(out)
+}
+debugonce(ipolate)
+ipolate(dat)
+
+}
+ipolate(dat)
+
+
+  # Now make parameters for ppp object
+}
+
 
 
 ###############################################################################################
