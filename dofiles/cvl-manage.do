@@ -76,8 +76,7 @@ gen Female = (Sex==2)
 
 drop Sex Age1 AgeTested
 gen Data = "FVL"
-tempfile FVLdat
-save "`FVLdat'" 
+saveold "$derived/FVLdat", replace 
 
 ***********************************************************************************************************
 ********************************************* Community VL ************************************************
@@ -91,16 +90,8 @@ save "`Individuals'"
 
 insheet using "$source/CommunityViralLoadWithARtemisData29jun2013.csv", clear 
 fdate datereceivedatacvl, sfmt("YMD")
-
-rename iintid IIntID 
 rename datereceivedatacvl TestDate
-gen TestYear = year(TestDate)
-
-** Get Sex and other  vars
-merge m:1 IIntID using "`Individuals'" , keep(match) nogen
-
-gen Age = int((TestDate - DateOfBirth)/365.25) 
-egen AgeGrp = cut(Age), at(15, 20, 25, 30, 35, 40, 45, 55, 150) icode label
+rename iintid IIntID 
 
 set seed 339487731
 gen RandomUndetectable =int(1500*runiform()) if vlbelowldl == "Yes"
@@ -108,14 +99,16 @@ replace vlresultcopiesml =RandomUndetectable if  vlbelowldl =="Yes"
 rename vlresultcopiesml ViralLoad
 drop if missing(ViralLoad)
 
-gen log10VL = log10(ViralLoad)
-gen Over50k = cond(ViralLoad>=50000, 1, 0)
+** Get Sex and other  vars
+merge m:1 IIntID using "`Individuals'" , keep(match) nogen
 
-keep IIntID Female TestDate TestYear ViralLoad Age* log10VL Over50k
+gen Age = 2011 - year(DateOfBirth)
+egen AgeGrp = cut(Age), at(15, 20, 25, 30, 35, 40, 45, 55, 150) icode label
+
+keep IIntID Female ViralLoad Age* 
 gen Data = "CVL"
 
-tempfile CVLdat
-save "`CVLdat'" 
+saveold "$derived/CVLdat", replace 
 
 
 

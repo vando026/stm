@@ -5,8 +5,8 @@
 ###############################################################################################
 ######################################## File paths ###########################################
 ###############################################################################################
-fpath <- file.path(Sys.getenv("USERPROFILE"), 
-  "Dropbox/AfricaCentre/Projects/CommunityVL")
+dropbox <- "Dropbox/AfricaCentre/Projects/CommunityVL"
+fpath <- file.path(Sys.getenv("USERPROFILE"), dropbox )
 dofile <- file.path(fpath, "dofiles")
 Source <- file.path(fpath, "source")
 derived <- file.path(fpath, "derived")
@@ -19,78 +19,90 @@ library(spatstat)
 
 
 ###############################################################################################
-######################################## Data #################################################
+######################################## Functions ############################################
 ###############################################################################################
-dat <- read.csv(file.path(derived, "Ind_PVL_All_29Nov2016.csv")) 
-xmin <- min(dat$Longitude)-0.1
-xmax <- max(dat$Longitude)+0.1
-ymin <- min(dat$Latitude)-0.1
-ymax <- max(dat$Latitude)+0.1
-
-params <- list(
-  x=dat$Longitude, y=dat$Latitude,
-  xrange=c(xmin, xmax),
-  yrange=c(ymin, ymax))
-
-setPPDV <- do.call(ppp, c(params, list(marks = dat$Over1500)))
-funPPDV <- Smoothfun(setPPDV, at="points")
-PPDV=funPPDV(coords(setPPDV))
-
-ppdv <- cbind(coords(setPPDV), PPDV)
-summary(dat$PPDV)
-
-
-setCTI <- do.call(ppp, c(params, list(marks = dat$Quin)))
-
-
-ipolate <- function(dat,
+ipolate <- function(
+  dat, bsdat,
   x="Longitude",
   y="Latitude",
   cvlname="ViralLoad", 
+  newname=NULL,
   weightname=NULL,
   sigma=NULL) {
 
-  # Make vars
-  long <- dat[[x]]
-  lat <- dat[[y]]
-  cvlname <- dat[[cvlname]]
+  # Make vars for analytic dataset
+  cvlvar <- dat[[cvlname]]
   if (!is.null(weightname)) 
     weightname <- dat[[weightname]]
+  if (is.null(newname)) 
+    newname <-  cvlname
 
-  # Get range of coords
-  xmin <- min(long)-0.1
-  xmax <- max(long)+0.1
-  ymin <- min(lat)-0.1
-  ymax <- max(lat)+0.1
+  doCords <- function(
+    cdat, xx=x, yy=y) {
+    # Get range of coords
+    long <- cdat[[xx]]
+    lat <- cdat[[yy]]
+    xmin <- min(long); xmax <- max(long)
+    ymin <- min(lat); ymax <- max(lat)
+    cout <- list(
+      long=long, lat=lat, 
+      xmin=ymin, xmax=xmax,
+      ymin=ymin, ymax=ymax)
+    return(cout)
+  }
+  #get coords for input dataset
+  ds <- doCords(dat) 
+  #get coords for predicted dataset
+  bs <- doCords(bsdat) 
   
-  # Set the paramters for ppp object
-  params <- list(
-    x=long, y=lat,
-    xrange=c(xmin, xmax),
-    yrange=c(ymin, ymax))
+  # Set the paramters for imput dataset
+  ds_params <- list(
+    x=ds$long, y=ds$lat,
+    xrange=c(ds$xmin, ds$xmax),
+    yrange=c(ds$ymin, ds$ymax))
 
-  # Create the ppp object
-  set <- do.call(ppp, 
-    c(params, 
-    list(marks = cvlname)))
+  # Set parameters for predicted dataset
+  bs_params <- list(
+    x=bs$long, y=bs$lat,
+    xrange=c(bs$xmin, bs$xmax),
+    yrange=c(bs$ymin, bs$ymax))
 
-  sfun <- Smoothfun(set, 
+  # Create the ppp object for input dataset
+  ds_set <- do.call(ppp, 
+    c(ds_params, list(marks = cvlvar)))
+
+  # Create ppp object for predicted dataset
+  bs_set <- do.call(ppp, bs_params)
+
+  # Now smooth over input dataset
+  sfun <- Smoothfun(ds_set, 
     weights=weightname,
     at="points")
-  # predicted values at the coords
-  predict <- sfun(coords(set))
-  out <- cbind(coords(set), predict)
+
+  # and get predicted values at all BSIntID
+  bs_predict <- sfun(coords(bs_set))
+  names(bs_predict) <- newname
+  cat(paste('Summary of ', newname,': \n'))
+  print(summary(bs_predict))
+  out <- cbind(coords(bs_set), bs_predict)
   return(out)
 }
 debugonce(ipolate)
-ipolate(dat)
 
-}
-ipolate(dat)
+###############################################################################################
+######################################## Analysis #############################################
+###############################################################################################
+dat <- read.csv(file.path(derived, "Ind_PVL_All_30Nov2016.csv")) 
+bsdat <- read.csv(file.path(derived, "BSIntID_Coords.csv")) 
+pvl <- ipolate(dat, bsdat, cvlname="ViralLoad", newname="PVL")
+ppdv <- ipolate(dat, cvlname="DetectViremia", newname="P_PDV")
+pcti <- ipolate(dat, cvlname="TransIndex", newname="P_TI")
+hiv_prev <- ipolate(dat, cvlname="HIVResult", newname="HIV_Prev")
 
-
-  # Now make parameters for ppp object
-}
+# lets merge vars
+cvars <- c("Latitude", "Longitude")
+ndat <- merge(bsdat, pvl, by=cvars, all.x=TRUE)
+ndat <- ndat[order(ndat$BSIntID), ]
 
 
 
