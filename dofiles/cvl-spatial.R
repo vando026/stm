@@ -91,6 +91,7 @@ bsdat <- read.csv(file.path(derived, "BSIntID_Coords.csv"))
 pvl <- ipolate(dat, bsdat, cvlname="ViralLoad", newname="PVL")
 ppdv <- ipolate(dat, bsdat, cvlname="DetectViremia", newname="P_PDV")
 pcti <- ipolate(dat, bsdat, cvlname="TransIndex", newname="P_TI")
+gpvl <- ipolate(dat, bsdat, cvlname="Log10VL", newname="G_PVL")
 hiv_prev <- ipolate(dat, bsdat, cvlname="HIVResult", newname="HIV_Prev")
 
 # lets merge vars
@@ -98,6 +99,7 @@ cvars <- c("BSIntID", "Longitude", "Latitude")
 ndat <- merge(bsdat, pvl, by=cvars, all.x=TRUE)
 ndat <- merge(ndat, ppdv, by=cvars, all.x=TRUE)
 ndat <- merge(ndat, pcti, by=cvars, all.x=TRUE)
+ndat <- merge(ndat, gpvl, by=cvars, all.x=TRUE)
 ndat <- merge(ndat, hiv_prev, by=cvars, all.x=TRUE)
 ndat <- ndat[order(ndat$BSIntID), ]
 write.csv(ndat, file.path(Source, paste0('VL_Estimation_', today, '.csv')), row.names=FALSE)

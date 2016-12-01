@@ -42,7 +42,10 @@ save "`HIV'"
 ***********************************************************************************************
 use "`HIV'", clear
 drop if missing(BSIntID)
-collapse (count) N=IIntID , by(Female AgeGrp)
+tab Female AgeGrp , row
+collapse (count) Count=IIntID , by(Female AgeGrp)
+bysort Female: egen Total = total(Count)
+gen Proportion = Count/Total
 tempfile WeightN
 save "`WeightN'" 
 
@@ -78,6 +81,11 @@ gen TransIndex = (1-[1- _beta]^100)
 replace TransIndex = 0 if missing(TransIndex)
 sum TransIndex 
 
+** Log 10
+clonevar ViralLoad1 = ViralLoad 
+replace ViralLoad1 = ViralLoad1 + 10 if HIVResult==0
+gen Log10VL = log10(ViralLoad1)
+
 ** Bring in coordinates
 merge m:1 BSIntID using "`Cord'", keep(match) nogen 
 merge m:1 Female AgeGrp using "`Weights'", nogen
@@ -87,7 +95,7 @@ set seed 10000
 replace Longitude = Longitude + (runiform()/1000) if _BSTag > 0
 replace Latitude = Latitude + (runiform()/1000) if _BSTag > 0
 duplicates list Latitude Longitude
-keep BSIntID Longitude Latitude ViralLoad DetectViremia TransIndex fweight
+keep BSIntID Longitude Latitude ViralLoad Log10VL DetectViremia TransIndex fweight
 
 outsheet using "$derived\Ind_PVL_All_$today.csv", replace comma
 

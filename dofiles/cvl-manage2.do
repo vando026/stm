@@ -6,6 +6,9 @@
 ***********************************************************************************************************
 **************************************** Bring in Datasets*************************************************
 ***********************************************************************************************************
+** insheet using "$source/VL_Estimation_30_Nov_2016.csv", clear comma case
+** merge 1:1 BSIntID using "`PVL'", keepusing(IsUrbanOrR) keep(match)
+
 import excel using "$source/Viral_load_estimation_Nov22.xls", clear firstrow 
 keep BSIntID Longitude Latitude IsUrbanOrR P_GVL P_PDV P_TI HIV_Prevalence 
 rename P_GVL G_PVL
@@ -25,7 +28,7 @@ save "`G_FVL'"
 
 
 import excel using "$source/Viral_load_estimation_Oct22.xls", clear firstrow 
-keep BSIntID IsUrbanOrR G_MVL PDV TI
+keep BSIntID G_MVL PDV TI
 merge 1:1 BSIntID using "`PVL'" , nogen
 merge 1:1 BSIntID using "`FVL'", nogen
 merge 1:1 BSIntID using "`G_FVL'", nogen
@@ -39,15 +42,10 @@ foreach var of varlist * {
   }
 }
 
-insheet using "$source/VL_Estimation_30_Nov_2016.csv", clear comma case
-merge 1:1 BSIntID using "`PVL'", keepusing(IsUrbanOrR) keep(match)
-** No observations
-** drop if BSIntID > 17884
-
 ** Make HIV prev a percent
 replace P_PDV = P_PDV * 100
-replace P_TI = P_TI * 100
-replace HIV_Prev = HIV_Prev * 100
+** replace P_TI = P_TI * 100
+gen HIV_Prev = HIV_Prevalence * 100
 egen HIV_pcat = cut(HIV_Prev), at(0, 15, 30, 100) icode label
 tab HIV_pcat
 

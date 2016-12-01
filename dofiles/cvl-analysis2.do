@@ -36,7 +36,7 @@ foreach var of varlist P_PDV P_TI {
   ** stcox `var' $urban $vars, noshow
   ** stcox `var' $prev $urban $vars, noshow
 } 
-
+stcox $prev
 log close
 
 ***********************************************************************************************************
