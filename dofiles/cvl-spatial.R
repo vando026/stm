@@ -11,38 +11,46 @@ dofile <- file.path(fpath, "dofiles")
 Source <- file.path(fpath, "source")
 derived <- file.path(fpath, "derived")
 output  <- file.path(fpath, "output")
-today <- format(Sys.time(), "%d_%b_%Y")
+today <- format(Sys.time(), "%d%b%Y")
 
 ###############################################################################################
 ######################################## Library ##############################################
 ###############################################################################################
+library(maptools)
 library(spatstat)
+library(sp)
 
+
+###############################################################################################
+######################################## Input ################################################
+###############################################################################################
+shpfile <- file.path(Source,  'AC Area projected' ,'Boundaries projected.shp')
+getinfo.shape(shpfile)
+S <- readShapeSpatial(shpfile)
+SP <- as(S, "SpatialPolygons")
+W <- as(SP, "owin")
 
 ###############################################################################################
 ######################################## Functions ############################################
 ###############################################################################################
 ipolate <- function(
   dat, bsdat,
-  x="Longitude",
-  y="Latitude",
   cvlname="ViralLoad", 
   newname=NULL,
-  weightname=NULL,
+  weight=1,
   sigma=NULL) {
 
   # Make vars for analytic dataset
   cvlvar <- dat[[cvlname]]
-  if (!is.null(weightname)) 
-    weightname <- dat[[weightname]]
+  # If a new name is not given
   if (is.null(newname)) 
     newname <-  cvlname
 
   # set the vars
-  long <- dat[[x]]
-  lat <- dat[[y]]
-  bslong <- bsdat[[x]]
-  bslat <- bsdat[[y]]
+  long <- dat[["Longitude"]]
+  lat <- dat[["Latitude"]]
+  bslong <- bsdat[["Longitude"]]
+  bslat <- bsdat[["Latitude"]]
   # get the min/max ranges of the coords
   allx <- c(bslong, long)
   ally <- c(bslat, lat)
@@ -61,22 +69,20 @@ ipolate <- function(
 
   # Now smooth over input dataset
   sfun <- Smoothfun(set, 
-    weights=weightname,
     at="points")
 
-# browser()
   # and get predicted values at all BSIntID
   mat <- matrix(ncol=4, nrow=nrow(bsdat))
   for (i in seq(nrow(bsdat))) {
     bsrow <- bsdat[i, ]
-    list2env(bsrow, envir=environment())
-    mat[i, 1] <- BSIntID
-    mat[i, 2] <- Longitude
-    mat[i, 3] <- Latitude
-    mat[i, 4] <- sfun(Longitude, Latitude)
+    mat[i, 1] <- bsrow[["BSIntID"]]
+    mat[i, 2] <- bsrow[["Longitude"]]
+    mat[i, 3] <- bsrow[["Latitude"]]
+    mat[i, 4] <- sfun(bsrow[["Longitude"]], bsrow[["Latitude"]])
   }
   out <- as.data.frame(mat)
-  names(out) <- c("BSIntID", x, y, newname)
+  names(out) <- c("BSIntID", "Longitude", "Latitude", newname)
+  out[newname] <- out[newname] * weight
   cat(paste('Summary of ', newname,': \n'))
   print(summary(out[[newname]]))
   return(out)
@@ -86,13 +92,24 @@ ipolate <- function(
 ###############################################################################################
 ######################################## Analysis #############################################
 ###############################################################################################
-dat <- read.csv(file.path(derived, "Ind_PVL_All_30Nov2016.csv")) 
+# Note for dat: You must have variable names BSIntID, Latitude, Longitude, Female, AgeGrp
+dat <- read.csv(file.path(derived, "Ind_PVL_All_1Dec2016.csv")) 
 bsdat <- read.csv(file.path(derived, "BSIntID_Coords.csv")) 
+wdat <-  read.csv(file.path(derived, "HIV2011_weights.csv")) 
+
+
 pvl <- ipolate(dat, bsdat, cvlname="ViralLoad", newname="PVL")
 ppdv <- ipolate(dat, bsdat, cvlname="DetectViremia", newname="P_PDV")
 pcti <- ipolate(dat, bsdat, cvlname="TransIndex", newname="P_TI")
 gpvl <- ipolate(dat, bsdat, cvlname="Log10VL", newname="G_PVL")
-hiv_prev <- ipolate(dat, bsdat, cvlname="HIVResult", newname="HIV_Prev")
+
+
+hiv_prev <- ipolate(dat, bsdat, weight=100, cvlname="HIVResult", newname="HIV_Prev")
+
+
+
+
+
 
 # lets merge vars
 cvars <- c("BSIntID", "Longitude", "Latitude")
@@ -103,6 +120,33 @@ ndat <- merge(ndat, gpvl, by=cvars, all.x=TRUE)
 ndat <- merge(ndat, hiv_prev, by=cvars, all.x=TRUE)
 ndat <- ndat[order(ndat$BSIntID), ]
 write.csv(ndat, file.path(Source, paste0('VL_Estimation_', today, '.csv')), row.names=FALSE)
+
+
+getEst <- function(indat, bsdat, wdat, cvlname) {
+  cvars <- c("BSIntID", "Longitude", "Latitude")
+  out <- bsdat[, cvars]
+  age <- unique(wdat$AgeGrp)
+  for (age in Age) {
+    for (fem in c(0, 1)) {
+      prop <- subset(wdat, Female==fem & AgeGrp==age, 
+        select=Proportion)
+      adat <- subset(indat, Female==fem & AgeGrp==age)
+      label <- paste0('dat', substring(age,1,2), '_', fem)
+      print(label)
+browser()
+      idat <- ipolate(
+        adat, bsdat, 
+        weight=prop, 
+        cvlname=cvlname,
+        newname=label)
+      out <- merge(out, idat, by=cvars, all.x=TRUE)
+    }
+  }
+}
+# debugonce(getEst)
+getEst(dat, bsdat, wdat, cvlname="HIVResult")
+
+
 
 
 ###############################################################################################

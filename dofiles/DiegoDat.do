@@ -48,16 +48,7 @@ bysort Female: egen Total = total(Count)
 gen Proportion = Count/Total
 tempfile WeightN
 save "`WeightN'" 
-
-use "$derived/CVLdat", clear
-collapse (count) n=IIntID , by(Female AgeGrp)
-merge 1:1 Female AgeGrp using "`WeightN'", nogen
-gen fweight = N/n
-gen pweight = 1/N
-scalar Total = sum(N)
-gen pweight1 = n/Total
-tempfile Weights
-save "`Weights'" 
+outsheet using "$derived\HIV2011_weights.csv", replace comma
 
 ***********************************************************************************************
 **************************************** Create CVL data **************************************
@@ -75,28 +66,17 @@ sum DetectViremia
 
 ** TI
 gen log10VL = log10(ViralLoad)
-gen _TR = (2.45)^(log10VL - log10(150))
+gen _TR = (2.45)^(log10VL - log10(150)) if ViralLoad>150
 gen _beta = 0.003 * _TR
-gen TransIndex = (1-[1- _beta]^100)
+gen TransIndex = (1-(1- _beta)^100)
 replace TransIndex = 0 if missing(TransIndex)
 sum TransIndex 
 
-** Log 10
-clonevar ViralLoad1 = ViralLoad 
-replace ViralLoad1 = ViralLoad1 + 10 if HIVResult==0
-gen Log10VL = log10(ViralLoad1)
-
 ** Bring in coordinates
 merge m:1 BSIntID using "`Cord'", keep(match) nogen 
-merge m:1 Female AgeGrp using "`Weights'", nogen
+drop _* 
 
-duplicates tag Longitude Latitude, gen(_BSTag)
-set seed 10000
-replace Longitude = Longitude + (runiform()/1000) if _BSTag > 0
-replace Latitude = Latitude + (runiform()/1000) if _BSTag > 0
-duplicates list Latitude Longitude
-keep BSIntID Longitude Latitude ViralLoad Log10VL DetectViremia TransIndex fweight
-
+order BSIntID Longitude Latitude IIntID
 outsheet using "$derived\Ind_PVL_All_$today.csv", replace comma
 
 
