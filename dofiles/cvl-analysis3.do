@@ -3,26 +3,6 @@
 //  project:	Name
 //  author:     AV / Created: 23Oct2016 
 
-***********************************************************************************************************
-**************************************** Get populations weights ******************************************
-***********************************************************************************************************
-** Only for 2011?
-use "`Diego'", clear
-collapse (count) N=IIntID, by(AgeGrp1 Female)
-tempfile PopStand
-save "`PopStand'" 
-
-use "$derived/cvl-analysis2", clear
-duplicates drop IIntID, force  
-collapse (count) n=IIntID, by(AgeGrp1 Female)
-merge 1:1 Female AgeGrp1 using "`PopStand'" , nogen
-gen Weight = N/n
-gen fpc = 1/Weight
-egen Total = total(N) 
-gen pWeight = N/Total
-drop Total
-tempfile PopWeights
-save "`PopWeights'" 
 
 ***********************************************************************************************************
 **************************************** Quartiles ********************************************************
@@ -33,14 +13,15 @@ gen x = 1
 tempfile QDat
 save "`QDat'" 
 
-local vars G_MVL PDV TI G_PVL P_TI P_PDV 
+local vars G_MVL PDV TI G_PVL P_CTI P_PDV 
+** local vars P_PDV
 foreach var of local vars {
   use "$derived/cvl-analysis2", clear
   gen ID = _n
   qui stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
     origin(EarliestHIVNegative) scale(365.25) exit(EndDate) id(ID)
   qui egen Q = xtile(`var'), n(4)
-  strate Q Female, per(100) output("$output/`var'", replace)
+  strate Q Female AgeGrp1, per(100) output("$output/`var'", replace)
   ** strate Q , per(100) output("$output/`var'", replace)
   use "$output/`var'", clear
   gen Label = "`var'"
@@ -57,9 +38,24 @@ foreach var of local vars {
 use "`QDat'", clear
 drop in 1
 drop x _*
-** outsheet * using "$output\StdQuartileNoFEM.txt", replace
+rename AgeGrp1 AgeGrp
+** created from DiegoDat.do
+replace lb = 0 if missing(lb)
+replace ub = 0 if missing(ub)
+merge m:1 Female AgeGrp using "`WeightN'" , nogen keep(match)
+foreach var of varlist rate lb ub {
+  replace `var' = `var' * Proportion
+}
+collapse (sum) rate lb ub, by(Label Q Female)
 sort Label Female Q
+** outsheet * using "$output\StdQuartileNoFEM.txt", replace
 outsheet * using "$output\StdQuartile.txt", replace
+
+
+
+
+
+
 
 ***********************************************************************************************
 **************************************** Calc estimates ***************************************

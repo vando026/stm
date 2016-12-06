@@ -41,7 +41,7 @@ foreach var of varlist * {
 ** Make HIV prev a percent
 replace P_PDV = P_PDV * 100
 gen HIV_Prev = HIV_Prevalence * 100
-egen HIV_pcat = cut(HIV_Prev), at(0, 15, 30, 100) icode label
+egen HIV_pcat = cut(HIV_Prev), at(0, 15, 25, 100) icode label
 tab HIV_pcat
 
 

@@ -22,15 +22,6 @@ library(sp)
 
 
 ###############################################################################################
-######################################## Input ################################################
-###############################################################################################
-shpfile <- file.path(Source,  'AC Area projected' ,'Boundaries projected.shp')
-getinfo.shape(shpfile)
-S <- readShapeSpatial(shpfile)
-SP <- as(S, "SpatialPolygons")
-W <- as(SP, "owin")
-
-###############################################################################################
 ######################################## Functions ############################################
 ###############################################################################################
 ipolate <- function(
@@ -46,30 +37,11 @@ ipolate <- function(
   if (is.null(newname)) 
     newname <-  cvlname
 
-  # set the vars
-  long <- dat[["Longitude"]]
-  lat <- dat[["Latitude"]]
-  bslong <- bsdat[["Longitude"]]
-  bslat <- bsdat[["Latitude"]]
-  # get the min/max ranges of the coords
-  allx <- c(bslong, long)
-  ally <- c(bslat, lat)
-  xmin <- min(allx); xmax <- max(allx)
-  ymin <- min(ally); ymax <- max(ally)
-
-  # Set the paramters for imput dataset
-  params <- list(
-    x=long, y=lat,
-    xrange=c(xmin, xmax),
-    yrange=c(ymin, ymax))
-
-  # Create the ppp object for input dataset
-  set <- do.call(ppp, 
-    c(params, list(marks = cvlvar)))
+  coordinates(dat) <- ~Longitude+Latitude
+  set <- as(dat[cvlvar], "ppp")
 
   # Now smooth over input dataset
-  sfun <- Smoothfun(set, 
-    at="points")
+  sfun <- Smoothfun(set, at="points")
 
   # and get predicted values at all BSIntID
   mat <- matrix(ncol=4, nrow=nrow(bsdat))
@@ -78,6 +50,7 @@ ipolate <- function(
     mat[i, 1] <- bsrow[["BSIntID"]]
     mat[i, 2] <- bsrow[["Longitude"]]
     mat[i, 3] <- bsrow[["Latitude"]]
+    pr <- sfun(bsrow[["Longitude"]], bsrow[["Latitude"]])
     mat[i, 4] <- sfun(bsrow[["Longitude"]], bsrow[["Latitude"]])
   }
   out <- as.data.frame(mat)
@@ -103,23 +76,7 @@ ppdv <- ipolate(dat, bsdat, cvlname="DetectViremia", newname="P_PDV")
 pcti <- ipolate(dat, bsdat, cvlname="TransIndex", newname="P_TI")
 gpvl <- ipolate(dat, bsdat, cvlname="Log10VL", newname="G_PVL")
 
-
-hiv_prev <- ipolate(dat, bsdat, weight=100, cvlname="HIVResult", newname="HIV_Prev")
-
-
-
-
-
-
-# lets merge vars
-cvars <- c("BSIntID", "Longitude", "Latitude")
-ndat <- merge(bsdat, pvl, by=cvars, all.x=TRUE)
-ndat <- merge(ndat, ppdv, by=cvars, all.x=TRUE)
-ndat <- merge(ndat, pcti, by=cvars, all.x=TRUE)
-ndat <- merge(ndat, gpvl, by=cvars, all.x=TRUE)
-ndat <- merge(ndat, hiv_prev, by=cvars, all.x=TRUE)
-ndat <- ndat[order(ndat$BSIntID), ]
-write.csv(ndat, file.path(Source, paste0('VL_Estimation_', today, '.csv')), row.names=FALSE)
+hiv_prev <- ipolate(dat, bsdat, weight=1, cvlname="HIVResult", newname="HIV_Prev")
 
 
 getEst <- function(indat, bsdat, wdat, cvlname) {
@@ -147,25 +104,24 @@ browser()
 getEst(dat, bsdat, wdat, cvlname="HIVResult")
 
 
+# lets merge vars
+cvars <- c("BSIntID", "Longitude", "Latitude")
+ndat <- merge(bsdat, pvl, by=cvars, all.x=TRUE)
+ndat <- merge(ndat, ppdv, by=cvars, all.x=TRUE)
+ndat <- merge(ndat, pcti, by=cvars, all.x=TRUE)
+ndat <- merge(ndat, gpvl, by=cvars, all.x=TRUE)
+ndat <- merge(ndat, hiv_prev, by=cvars, all.x=TRUE)
+ndat <- ndat[order(ndat$BSIntID), ]
+write.csv(ndat, file.path(Source, paste0('VL_Estimation_', today, '.csv')), row.names=FALSE)
+
 
 
 ###############################################################################################
-######################################## Eg code ##############################################
+######################################## Input ################################################
 ###############################################################################################
-data(longleaf)
-npoints(longleaf)
-summary(longleaf$x)
-summary(longleaf$y)
-datl <- as.data.frame(longleaf)
-head(datl)
+shpfile <- file.path(Source,  'AC Area projected' ,'Boundaries projected.shp')
+getinfo.shape(shpfile)
+S <- readShapeSpatial(shpfile)
+SP <- as(S, "SpatialPolygons")
+W <- as(SP, "owin")
 
-# Smooth and then obtain smoothed point at location
-est <- Smoothfun(longleaf, sigma=0)
-est(199.3, 10)
-est <- Smoothfun(longleaf, sigma=10)
-est(199.3, 10)
-
-f <- Smoothfun(longleaf)
-f
-f(120, 80)
-f(coords(longleaf))

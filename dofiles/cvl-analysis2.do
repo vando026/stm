@@ -60,7 +60,7 @@ esttab $CVL using "$output/Model1.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5'
 ***********************************************************************************************************
 ***************************************** P_PVL vars ******************************************************
 ***********************************************************************************************************
-global PCVL G_PVL P_PDV P_TI 
+global PCVL G_PVL P_PDV P_CTI 
 foreach mod of global PCVL {
   eststo `mod': stcox `mod' $vars , noshow
   mat `mod' = r(table)
@@ -134,7 +134,7 @@ lrtest  G_PVL_only G_PVL_prev, force
 mat AIC[2, 4] = r(p)
 lrtest  P_PDV_only P_PDV_prev, force
 mat AIC[3, 4] = r(p)
-lrtest P_TI_only P_TI_prev, force
+lrtest P_CTI_only P_CTI_prev, force
 mat AIC[4, 4] = r(p)
 mat list AIC
 
@@ -144,7 +144,7 @@ mat list AIC
 ***********************************************************************************************************
 pwcorr G_PVL G_FVL, sig
 pwcorr P_PDV FVL_PDV, sig
-pwcorr P_TI FVL_TI, sig
+pwcorr P_CTI FVL_TI, sig
 
 ***********************************************************************************************************
 **************************************** Table 2 incidence ************************************************

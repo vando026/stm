@@ -17,7 +17,7 @@ PMVL <- mat[mat$Label=="G_PVL", ]
 PDV <- mat[mat$Label=="PDV", ]
 PPDV <- mat[mat$Label=="P_PDV", ]
 TI <- mat[mat$Label=="TI", ]
-PTI <- mat[mat$Label=="P_TI", ]
+PTI <- mat[mat$Label=="P_CTI", ]
 
 len = 4
 scex <- c(rep(1, len), rep(1, len))
