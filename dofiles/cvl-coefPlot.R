@@ -10,15 +10,6 @@ root  =  file.path(Sys.getenv("USERPROFILE"), "Dropbox/AfricaCentre/Projects/Com
 derived  =  file.path(root, "derived")
 output  =  file.path(root, "output")
 
-mat <- read.table(file.path(output, "StdQuartile.txt"), header=TRUE)
-mat <- transform(mat, Q=ifelse(Female==1, Q - 0.15, Q + 0.15))
-MVL <- mat[mat$Label=="G_MVL", ]
-PMVL <- mat[mat$Label=="G_PVL", ]
-PDV <- mat[mat$Label=="PDV", ]
-PPDV <- mat[mat$Label=="P_PDV", ]
-TI <- mat[mat$Label=="TI", ]
-PTI <- mat[mat$Label=="P_CTI", ]
-
 len = 4
 scex <- c(rep(1, len), rep(1, len))
 cols <- c('dodgerblue4', 'indianred4')
@@ -40,6 +31,15 @@ coefPlot <- function(
   axis(1, at=c(1:4))
   axis(2, at=c(1:6))
 }
+
+mat <- read.table(file.path(output, "StdQuartile.txt"), header=TRUE)
+mat <- transform(mat, Q=ifelse(Female==1, Q - 0.15, Q + 0.15))
+MVL <- mat[mat$Label=="G_MVL", ]
+PMVL <- mat[mat$Label=="G_PVL", ]
+PDV <- mat[mat$Label=="PDV", ]
+PPDV <- mat[mat$Label=="P_PDV", ]
+TI <- mat[mat$Label=="TI", ]
+PTI <- mat[mat$Label=="P_CTI", ]
 
 png(file=file.path(output, "CVL_quant.png"), 
   units="in", width=10, height=10, pointsize=10, res=300, type="cairo")

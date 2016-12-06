@@ -7,6 +7,7 @@
 ***********************************************************************************************************
 **************************************** Quartiles ********************************************************
 ***********************************************************************************************************
+global std "no"
 clear
 set obs 1 
 gen x = 1
@@ -21,8 +22,12 @@ foreach var of local vars {
   qui stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
     origin(EarliestHIVNegative) scale(365.25) exit(EndDate) id(ID)
   qui egen Q = xtile(`var'), n(4)
-  strate Q Female AgeGrp1, per(100) output("$output/`var'", replace)
-  ** strate Q , per(100) output("$output/`var'", replace)
+  if "$std"=="yes" {
+    strate Q Female AgeGrp1, per(100) output("$output/`var'", replace)
+  } 
+  else {
+    strate Q Female , per(100) output("$output/`var'", replace)
+  }
   use "$output/`var'", clear
   gen Label = "`var'"
   rename _Rate rate
@@ -35,25 +40,24 @@ foreach var of local vars {
   save "`QDat'", replace
 }
 
+
 use "`QDat'", clear
 drop in 1
 drop x _*
-rename AgeGrp1 AgeGrp
-** created from DiegoDat.do
-replace lb = 0 if missing(lb)
-replace ub = 0 if missing(ub)
-merge m:1 Female AgeGrp using "`WeightN'" , nogen keep(match)
-foreach var of varlist rate lb ub {
-  replace `var' = `var' * Proportion
+if "$std"=="yes" {
+  rename AgeGrp1 AgeGrp
+  replace lb = 0 if missing(lb)
+  replace ub = 0 if missing(ub)
+  ** created from DiegoDat.do
+  merge m:1 Female AgeGrp using "`WeightN'" , nogen keep(match)
+  foreach var of varlist rate lb ub {
+    replace `var' = `var' * Proportion
+  }
+  collapse (sum) rate lb ub, by(Label Q Female)
 }
-collapse (sum) rate lb ub, by(Label Q Female)
 sort Label Female Q
 ** outsheet * using "$output\StdQuartileNoFEM.txt", replace
 outsheet * using "$output\StdQuartile.txt", replace
-
-
-
-
 
 
 
