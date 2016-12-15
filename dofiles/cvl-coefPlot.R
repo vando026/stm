@@ -5,6 +5,7 @@
 library(readstata13)
 library(foreign)
 library(plotrix)
+library(epitools)
 
 root  =  file.path(Sys.getenv("USERPROFILE"), "Dropbox/AfricaCentre/Projects/CommunityVL/")
 derived  =  file.path(root, "derived")
@@ -35,7 +36,6 @@ coefPlot <- function(
 }
 
 mat <- read.table(file.path(output, "StdQuartile.txt"), header=TRUE)
-mat <- transform(mat, Q=ifelse(Female==1, Q - 0.15, Q + 0.15))
 MVL <- mat[mat$Label=="G_MVL", ]
 PMVL <- mat[mat$Label=="G_PVL", ]
 PDV <- mat[mat$Label=="PDV", ]
@@ -43,7 +43,35 @@ PPDV <- mat[mat$Label=="P_PDV", ]
 TI <- mat[mat$Label=="TI", ]
 PTI <- mat[mat$Label=="P_CTI", ]
 
-png(file=file.path(output, "CVL_quant.png"), 
+# Now apply direct standard weight
+directStd <- function(obj) {
+  mat <- matrix(nrow=8, ncol=6)
+  i  <- 1
+  for (fem in c(0,1)) {
+    for (qq in seq(1:4)) {
+      est <- subset(obj, Q==qq & Female==fem)
+      res <- ageadjust.direct(est[,"D"],est[,"PY"],stdpop=est$Count)
+      mat[i,1]  <- fem 
+      mat[i,2]  <- qq 
+      mat[i, 3:6]  <- res 
+      i <- i + 1
+    } 
+  } 
+  mat <- as.data.frame(mat)
+  mat <- transform(mat, Label=as.character(obj$Label[1]))
+  colnames(mat) <- c("Female", "Q", "Crude", "rate", "lb", "ub", "Label")
+  mat <- transform(mat, Q=ifelse(Female==1, Q - 0.15, Q + 0.15))
+  mat
+}
+# debugonce(directStd)
+# directStd(PMVL)
+
+out <- list(MVL=MVL, PDV=PDV, TI=TI, PMVL=PMVL, PTI=PTI, PPDV=PPDV)
+CTI <- lapply(out, directStd)
+
+
+
+png(file=file.path(output, "CVL_quant_Std.png"), 
   units="in", width=10, height=10, pointsize=10, res=300, type="cairo")
 par(oma=c(0.0, 3.0, 0.3,0.2))  
 nf <- layout(matrix(c(1:6,rep(7, 3)), ncol=3, byrow=TRUE),
@@ -54,12 +82,12 @@ pdv <- "Percent detectable virus"
 gvl <- "Geometric mean viral load"
 hiv1 <- "(HIV+ only)"
 hiv2 <- "(HIV+ and HIV-)"
-coefPlot(MVL, pmain=c(paste("A:", gvl), hiv1), scols=scols)
-coefPlot(PDV, pmain=c(paste("B:", pdv), hiv1), scols=scols)
-coefPlot(TI,  pmain=c(paste("C:", cti), hiv1), scols=scols)
-coefPlot(PMVL, pmain=c(paste("D:", gvl), hiv2), scols=scols)
-coefPlot(PPDV, pmain=c(paste("E:", pdv), hiv2), scols=scols)
-coefPlot(PTI,  pmain=c(paste("F:", cti), hiv2), scols=scols)
+coefPlot(CTI$MVL, pmain=c(paste("A:", gvl), hiv1), scols=scols)
+coefPlot(CTI$PDV, pmain=c(paste("B:", pdv), hiv1), scols=scols)
+coefPlot(CTI$TI,  pmain=c(paste("C:", cti), hiv1), scols=scols)
+coefPlot(CTI$PMVL, pmain=c(paste("D:", gvl), hiv2), scols=scols)
+coefPlot(CTI$PPDV, pmain=c(paste("E:", pdv), hiv2), scols=scols)
+coefPlot(CTI$PTI,  pmain=c(paste("F:", cti), hiv2), scols=scols)
 plot(1,1,type="n", xlab='', ylab='', axes=FALSE)
 legend("bottom", bty="n",  
   c("Females  ", "Males"), cex=1.5,

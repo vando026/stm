@@ -43,10 +43,12 @@ foreach var of local vars {
 
 use "`QDat'", clear
 drop in 1
-drop x _*
+drop x 
 rename AgeGrp1 AgeGrp
-replace lb = 0 if missing(lb)
-replace ub = 0 if missing(ub)
+keep Q Female AgeGrp _D _Y  Label
+rename _D D
+rename _Y PY
+merge m:1 Female AgeGrp using "`WeightN'", keep(match) nogen keepusing(Count)
 outsheet * using "$output\StdQuartile.txt", replace
 
   ** created from DiegoDat.do
