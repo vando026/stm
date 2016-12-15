@@ -70,6 +70,8 @@ drop if year(LatestHIVNegative) < 2011 & missing(EarliestHIVPositive)
 ** If any positives prior to 2011 drop
 ** IE The repeat tester is right censored before start of study
 drop if year(EarliestHIVPositive) < 2011
+gen FirstNegYear = year(EarliestHIVNegative)
+tab FirstNegYear 
 
 ***********************************************************************************************************
 **************************************** Impute dates *****************************************************

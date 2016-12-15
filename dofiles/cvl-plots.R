@@ -23,10 +23,9 @@ plotCVL <- function(dat, main, cols, ylim2, ylab2="") {
   agelab <- paste0(seq(15, 45, 5), "-")
   scols <- c(rep(cols[1], len),rep(cols[2], len))
 
-  # par(mar=c(4.2, 3.0, 5, 2))  
   with(dat, plotCI(Age, mean, ui=ub, li=lb, ylim=ylim2, xlim=c(-0.1, 6.5), 
-    xlab="Age Groups", ylab=ylab2, xaxt="n", yaxt="n", axes=FALSE, 
-    lwd=2, cex=1, pch=16, col=scols, main=main))
+    xlab=expression(bold("Age Groups")), ylab=ylab2, xaxt="n", yaxt="n", axes=FALSE, 
+    lwd=2, cex=1, pch=16, col=scols, main=main, cex.lab=1.2))
     axis(side=1, at = seq(0, 6, 1), labels = agelab)
 }
 
@@ -53,7 +52,7 @@ transform(fmn, Ratio=Ratio(fmn))
 png(file=file.path(output, "MVL_mn_2011.png"), 
   units="in", width=8, height=8, pointsize=14, res=300, type="cairo")
 plotCVL(gmn, main="",
-  ylab2="Geometric mean viral load (copies/mL)", cols=cols, ylim2=c(0, 65000))
+  ylab2=expression(bold("Geometric mean viral load (copies/mL)")), cols=cols, ylim2=c(0, 65000))
 axis(side=2, at = seq(0, 60000, 10000), 
   labels = formatC(c(seq(0, 50000, 10000), 90000), format="d", big.mark=" "))
 axis.break(axis=2, breakpos=55000, style = "slash", brw=0.02)
@@ -64,7 +63,7 @@ dev.off()
 png(file=file.path(output, "FMVL_mn_2011.png"), 
   units="in", width=8, height=8, pointsize=14, res=300, type="cairo")
 plotCVL(fmn, main="",
-  ylab2="Geometric mean viral load (copies/mL)", cols=cols, ylim2=c(0, 8000))
+  ylab2=expression(bold("Geometric mean viral load (copies/mL)")), cols=cols, ylim2=c(0, 8000))
 axis(side=2, at = seq(0, 8000, 2000), labels=c(0, 2000, 4000, 6000, 20000))
 axis.break(axis=2, breakpos=6500, style = "slash", brw=0.02)
 legend("top", c("Males", "Females"),
@@ -83,10 +82,9 @@ transform(f50, Ratio=Ratio(f50))
 
 png(file=file.path(output, "P50.png"), 
   units="in", width=8, height=8, pointsize=14, res=300, type="cairo")
-plotCVL(p50, 
-  main="",
+plotCVL(p50, main="",
   ylim2=c(0, 1),
-  ylab="Proportion  >50,000 copies/mL" , cols=cols)
+  ylab=expression(bold("Proportion  >50,000 copies/mL")), cols=cols)
 axis(side=2, at = seq(0, 1, 0.2))
 legend("top", 
   c("Males", "Females"),
@@ -96,9 +94,9 @@ dev.off()
 png(file=file.path(output, "F50.png"), 
   units="in", width=8, height=8, pointsize=14, res=300, type="cairo")
 plotCVL(f50, main="",
-  ylim2=c(0,1),
-  ylab="Proportion >50,000 copies/mL ", cols=cols)
-axis(side=2, at = seq(0, 1, 0.2))
+  ylim2=c(0,0.6),
+  ylab=expression(bold("Proportion >50,000 copies/mL ")), cols=cols)
+axis(side=2, at = seq(0, 0.6, 0.1))
 legend("top", 
   c("Males", "Females"),
   ncol=2, lty=1, pt.cex=1.5, lwd=2, pch=20, col=cols, bty="n")

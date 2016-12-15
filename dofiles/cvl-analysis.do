@@ -7,19 +7,17 @@
 **************************************** Generate the Estimates *******************************************
 ***********************************************************************************************************
 ** Get summary stats for tables
-use "$derived/PVL2011", clear 
-rename AgeTestedVL Age
-bysort Data:  tab1 Female Age
-bysort Data: sum ViralLoad, d
-bysort Data: ameans ViralLoad
-bysort Data: sum VLSuppressed
+use "$derived/CVLdat", clear 
+
+tab1 Female AgeGrp
+sum ViralLoad, d
+ameans ViralLoad
+sum DetectVL
 gen logVL = log10(ViralLoad)
-** bysort Data: tab OnART 
-
 gen Over50k = (ViralLoad>50000)
+gen SuppressVL = (DetectVL==0)
 
-** Look at indiv only on ART
-** drop if OnART == 1 
+bysort Female: ameans SuppressVL 
 
 ** Comute geometric mean
 statsby mean=r(mean_g) lb=r(lb_g) ub=r(ub_g), by(Data Female Age) saving("$derived/gmean2011", replace): /// 
@@ -40,3 +38,15 @@ foreach dat in gmean2011 mean2011 med2011 over50_2011 {
   saveold "$derived/`dat'", replace
 }
 
+***********************************************************************************************
+**************************************** FVL data *********************************************
+***********************************************************************************************
+use "$derived/FVLdat", clear 
+tab1 Female AgeGrp
+sum ViralLoad, d
+ameans ViralLoad
+sum DetectVL
+gen logVL = log10(ViralLoad)
+gen Over50k = (ViralLoad>50000)
+
+gen Over50k = (ViralLoad>50000)

@@ -23,18 +23,19 @@ global vars "Female i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
 ***********************************************************************************************************
 foreach var of varlist G_MVL PDV TI {
   dis as text _n "=========================================> Showing for `var'"
-  stcox `var', noshow
-  stcox `var' $vars, noshow
+  ** stcox `var', noshow
+  ** stcox `var' $vars, noshow
   ** stcox `var' $urban $vars, noshow
-  ** stcox `var' $prev $urban $vars, noshow
+  stcox `var' $prev $vars, noshow
 } 
 
 foreach var of varlist G_PVL P_PDV P_CTI {
   dis as text _n "=========================================> Showing for `var'"
   ** stcox `var', noshow
   ** stcox `var' $vars, noshow
-  stcox `var' $urban $vars, noshow
-  ** stcox `var' $prev $urban $vars, noshow
+  ** stcox `var' $prev $vars, noshow
+  ** stcox `var' HIV_Prev $vars, noshow
+  stcox `var' $prev $urban $vars, noshow
 } 
 ** stcox $prev
 ** log close
@@ -44,31 +45,33 @@ foreach var of varlist G_PVL P_PDV P_CTI {
 ***********************************************************************************************************
 global CVL G_MVL PDV TI 
 foreach mod of global CVL   {
-  eststo `mod': stcox `mod' $vars , noshow
+  eststo `mod': stcox `mod' $prev $vars , noshow
   mat `mod' = r(table)
   mat `mod' = `mod'[1..6,1]'
 }
 
 global opts1 "cells("b(fmt(%9.3f)) ci(par(( - ))) p") substitute(0.000 "<0.001") compress"
-global opts2 "eform varwidth(12) modelwidth(6 13 6) nonumbers nogaps replace"
+global opts2 "eform varwidth(12) modelwidth(6 13 6) nonumbers nogaps replace aic(0)"
 global opts3 "mlabels("Model 1" "Model 2" "Model 3")"
 global opts4 order($CVL)
 global opts6 "drop(0.HIV_pcat 0.AgeGrp1 1.urban 1.Marital 0.PartnerCat 1.AIQ)"
 local opts5 "csv"
-esttab $CVL using "$output/Model1.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
+esttab $CVL using "$output/Model1.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5'  
 
 ***********************************************************************************************************
 ***************************************** P_PVL vars ******************************************************
 ***********************************************************************************************************
+eststo PHIV: stcox $prev $vars, noshow
 global PCVL G_PVL P_PDV P_CTI 
 foreach mod of global PCVL {
-  eststo `mod': stcox `mod' $vars , noshow
+  eststo `mod': stcox `mod' $prev $vars , noshow
   mat `mod' = r(table)
   mat `mod' = `mod'[1..6,1]'
 }
 
+global opts3 "mlabels("Model 0" "Model 1" "Model 2" "Model 3")"
 global opts4 order($PCVL)
-esttab $PCVL using "$output/Model2.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
+esttab PHIV $PCVL using "$output/Model2.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
 
 
 ***********************************************************************************************************
@@ -76,7 +79,7 @@ esttab $PCVL using "$output/Model2.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5'
 ***********************************************************************************************************
 global FVL G_FVL FVL_PDV FVL_TI
 foreach mod of global FVL {
-  eststo `mod': stcox `mod' $vars, noshow
+  eststo `mod': stcox `mod' $prev $vars, noshow
 }
 global opts4 order($FVL)
 esttab $FVL using "$output/Model3.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 

@@ -47,35 +47,33 @@ sum ViralLoad, d
 ** In 2011, VL or 1 or 40 is undetectable
 if "$VLImpute"=="Yes" {
   set seed 339487734
-  gen RandomUndetectable =ceil(1500*runiform()) if ViralLoad <=40
+  gen RandomUndetectable =ceil(1550*runiform()) if ViralLoad <=40
   replace ViralLoad = RandomUndetectable if ViralLoad<=40
 } 
 
 ** Keep specific years
-bysort IIntID: egen DateOfInitiationMin = min(DateOfInitiation)
-format DateOfInitiationMin %td
 gen TestYear = year(TestDate)
 keep if inlist(TestYear, 2011)
-
-gen log10VL = log10(ViralLoad) 
-gen Over50k = cond(ViralLoad>=50000, 1, 0)
-
-drop ACDIS_IIntID 
-keep IIntID Sex TestDate TestYear ViralLoad AgeTested log10VL Over50k DateOfInitiationMin
-rename DateOfInitiationMin DateOfInitiation
-
-** Ok, multiple VL by indiv
-bysort IIntID : egen VLmn = mean(ViralLoad)
-replace  VLmn = floor(VLmn)
-collapse (firstnm) ViralLoad = VLmn AgeTested Sex, by(IIntID)
+distinct IIntID 
 
 bysort IIntID: egen Age1 = min(AgeTested)
-
-egen AgeTestedVL = cut(Age1), at(15, 20, 25, 30, 35, 40, 45, 100) icode label
+keep if inrange(Age1, 15, 100)
 gen Female = (Sex==2)
+egen AgeGrp = cut(Age1), at(15, 20, 25, 30, 35, 40, 45, 55, 100) icode label
 
-drop Sex Age1 AgeTested
-gen Data = "FVL"
+** Ok, multiple VL by indiv
+preserve
+collapse (firstnm) ViralLoad, by(IIntID)
+tempfile FVL_mn
+save "`FVL_mn'" 
+restore
+
+bysort IIntID (TestDate): keep if _n==1
+drop ViralLoad 
+merge 1:1 IIntID using "`FVL_mn'", nogen
+
+gen DetectVL = (ViralLoad>1550)
+keep IIntID Female AgeGrp ViralLoad DetectVL 
 saveold "$derived/FVLdat", replace 
 
 ***********************************************************************************************************
@@ -104,14 +102,11 @@ merge m:1 IIntID using "`Individuals'" , keep(match) nogen
 
 gen Age = 2011 - year(DateOfBirth)
 egen AgeGrp = cut(Age), at(15, 20, 25, 30, 35, 40, 45, 55, 150) icode label
+gen DetectVL = (ViralLoad>1550)
 
-keep IIntID Female ViralLoad Age* 
-gen Data = "CVL"
+keep IIntID Female ViralLoad Age* DetectVL
 
 saveold "$derived/CVLdat", replace 
-
-
-
 
 
 

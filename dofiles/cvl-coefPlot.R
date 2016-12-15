@@ -19,15 +19,17 @@ coefPlot <- function(
   mat, pmain, scols,
   ylim2=c(0, 6)) {
   par(mar=c(3.5,2.4,2.6,0.1))
-  Ylab="Seroconversion rate per 100 person-years"
+  Ylab=expression(bold("Seroconversion rate per 100 person-years"))
   with(mat, 
     plotCI(Q, rate, ui=ub, li=lb,
     ylim=ylim2,
-    main=pmain, lwd=2, cex=1, pch=19, 
+    # main=pmain, 
+    lwd=2, cex=1, pch=19, 
     col=scols, 
-    xlab="", 
+    xlab="",
     ylab=Ylab,
     xaxt="n", bty="n"))
+  title(main=pmain,cex.main=1.5)
   axis(1, at=c(1:4))
   axis(2, at=c(1:6))
 }
@@ -52,19 +54,19 @@ pdv <- "Percent detectable virus"
 gvl <- "Geometric mean viral load"
 hiv1 <- "(HIV+ only)"
 hiv2 <- "(HIV+ and HIV-)"
-coefPlot(MVL, pmain=paste("A:   ", gvl, hiv1), scols=scols)
-coefPlot(PDV, pmain=paste("B:   ", pdv, hiv1), scols=scols)
-coefPlot(TI,  pmain=paste("C:   ", cti, hiv1), scols=scols)
-coefPlot(PMVL, pmain=paste("D:  ", gvl, hiv2), scols=scols)
-coefPlot(PPDV, pmain=paste("E:  ", pdv, hiv2), scols=scols)
-coefPlot(PTI,  pmain=paste("F:  ", cti, hiv2), scols=scols)
+coefPlot(MVL, pmain=c(paste("A:", gvl), hiv1), scols=scols)
+coefPlot(PDV, pmain=c(paste("B:", pdv), hiv1), scols=scols)
+coefPlot(TI,  pmain=c(paste("C:", cti), hiv1), scols=scols)
+coefPlot(PMVL, pmain=c(paste("D:", gvl), hiv2), scols=scols)
+coefPlot(PPDV, pmain=c(paste("E:", pdv), hiv2), scols=scols)
+coefPlot(PTI,  pmain=c(paste("F:", cti), hiv2), scols=scols)
 plot(1,1,type="n", xlab='', ylab='', axes=FALSE)
 legend("bottom", bty="n",  
   c("Females  ", "Males"), cex=1.5,
   ncol=2, lty=1, pt.cex=1.5, lwd=2, pch=20, col=cols,
   inset=c(3.8,  -1.2))
-mtext("Seroconversions per 100 person-years", line=1, cex=1, side=2, outer=TRUE, at=0.55)
-mtext("Quartile", line=-7, side=1, outer=TRUE, at=0.5, cex=1)
+mtext(expression(bold("Seroconversions per 100 person-years")), line=1, cex=1.2, side=2, outer=TRUE, at=0.55)
+mtext(expression(bold("Quartile")), line=-7, side=1, outer=TRUE, at=0.5, cex=1.2)
 dev.off()
 
 ###############################################################################################

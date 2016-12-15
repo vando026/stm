@@ -7,7 +7,7 @@
 ***********************************************************************************************************
 **************************************** Quartiles ********************************************************
 ***********************************************************************************************************
-global std "no"
+global std "yes"
 clear
 set obs 1 
 gen x = 1
@@ -44,10 +44,11 @@ foreach var of local vars {
 use "`QDat'", clear
 drop in 1
 drop x _*
-if "$std"=="yes" {
-  rename AgeGrp1 AgeGrp
-  replace lb = 0 if missing(lb)
-  replace ub = 0 if missing(ub)
+rename AgeGrp1 AgeGrp
+replace lb = 0 if missing(lb)
+replace ub = 0 if missing(ub)
+outsheet * using "$output\StdQuartile.txt", replace
+
   ** created from DiegoDat.do
   merge m:1 Female AgeGrp using "`WeightN'" , nogen keep(match)
   foreach var of varlist rate lb ub {
