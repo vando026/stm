@@ -47,6 +47,8 @@ do "$dofile/cvl-manage2"
 ** This dofile does Cox models
 do "$dofile/cvl-analysis2"
 
+** This does incidence by quartile
+do "$dofile/cvl-analysis3" 
 
 
 mat TT = J(20, 3, .)
