@@ -19,6 +19,34 @@ today <- format(Sys.time(), "%d%b%Y")
 library(maptools)
 library(spatstat)
 library(sp)
+library(rgdal)
+
+###############################################################################################
+###############################################################################################
+###############################################################################################
+fpath <- file.path(Source, 'PPDV_Final.gdb')
+setwd(Source)
+ 
+# List all feature classes in a file geodatabase
+subset(ogrDrivers(), grepl("GDB", name))
+fc_list = ogrListLayers(fpath)
+print(fc_list)
+ 
+# Read the feature class
+fc = readOGR(dsn=".", layer="PPDV_Final")
+ 
+# Determine the FC extent, projection, and attribute information
+summary(fc)
+ 
+# View the feature class
+plot(fc)
+ 
+
+
+
+
+
+
 
 
 ###############################################################################################
