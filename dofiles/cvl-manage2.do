@@ -63,15 +63,13 @@ save "`Point'"
 ****************************************  Get BS for 2011 *************************************************
 ***********************************************************************************************************
 ** Bring in linked Demography data
-use "$source/RD02-002_Demography", clear
+use "$AC_Data/Demography/2015/RD02-002_Demography", clear
 
 ** Dont need any obs other than 2011
 keep if ExpYear == 2011
 
 ** Resident in BS in this year, drop if not
 drop if missing(BSIntID)
-
-** Drop duplicates as same BS per 1+ episode in 2011
 collapse (sum) ExpDays , by(BSIntID IIntID)
 
 ** Identify BS that ID spent most time in in 2011
@@ -109,7 +107,7 @@ restore
 ***********************************************************************************************************
 ** I get the assets quintile index from the HSE datasets
 foreach year in 2009 2010 2011 2012 {
-use "$source\HSE`year'", clear
+use "$AC_Data/HSE/HSE`year'", clear
 ** for some reason the BSIntID var is named differently in some datasets
    if `year' <= 2005 {  
     rename BSIntId BSIntID
@@ -156,7 +154,7 @@ save "`HSE2011'"
 ***********************************************************************************************************
 ******************************************* Individuals ***************************************************
 ***********************************************************************************************************
-use "$source/RD01-01_ACDIS_Individuals", clear
+use "$AC_Path/Individuals/2015/RD01-01_ACDIS_Individuals", clear
 gen Age = round((date("01-01-2011", "DMY")-DateOfBirth)/365.25, 1)
 duplicates drop IIntID, force
 tempfile Individuals
@@ -167,8 +165,8 @@ save "`Individuals'"
 ***********************************************************************************************************
 ************************************** Partners Marital ***************************************************
 ***********************************************************************************************************
-use "$source\MGH_Contacts2004to12", clear
-append using "$source\WGH_Contacts2004to12"
+use "$AC_Data/WGH_MGH/MGH_Contacts2004to12", clear
+append using "$AC_Data/WGH_MGH\WGH_Contacts2004to12"
 rename IIntId IIntID
 keep IIntID VisitDate PartnersInLastTwelveMonths 
 fdate VisitDate
@@ -192,7 +190,7 @@ save "`Partners'"
 ***********************************************************************************************************
 **************************************** Mariatal *********************************************************
 ***********************************************************************************************************
-use "$source\MGH_Contacts2004to12", clear
+use "$AC_Data/WGH_MGH\MGH_Contacts2004to12", clear
 rename IIntId IIntID
 
 keep IIntID VisitDate CurrentMaritalStatusName  

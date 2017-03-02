@@ -48,7 +48,17 @@ bysort Female: egen Total = total(Count)
 gen Proportion = Count/Total
 tempfile WeightN
 save "`WeightN'" 
+outsheet using "$derived\HIV2011_weightsFemale.csv", replace comma
+
+use "`HIV'", clear
+drop if missing(BSIntID)
+collapse (count) Count=IIntID , by(AgeGrp)
+egen Total = total(Count)
+gen Proportion = Count/Total
+tempfile WeightN
+save "`WeightN'" 
 outsheet using "$derived\HIV2011_weights.csv", replace comma
+
 
 ***********************************************************************************************
 **************************************** Create CVL data **************************************
@@ -73,7 +83,7 @@ replace TransIndex = 0 if missing(TransIndex)
 sum TransIndex 
 
 ** Bring in coordinates
-merge m:1 BSIntID using "`Cord'", keep(match) nogen 
+merge m:1 BSIntID using "`Cord'", // keep(match) nogen 
 drop _* 
 
 order BSIntID Longitude Latitude IIntID

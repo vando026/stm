@@ -7,7 +7,7 @@
 **************************************** Prep Data ********************************************************
 ***********************************************************************************************************
 ** Get IIntIDs from Demograpy dataset 2014
-use "$source/RD02-002_Demography", clear
+use "$AC_Data/Demography/2015/RD02-002_Demography", clear
 
 ** Get relevant IDs and vars
 duplicates drop IIntID, force
@@ -18,7 +18,7 @@ distinct IIntID
 tempfile Demo
 sav "`Demo'"
 
-use "$source/ARTemisAll2013A", clear 
+use "$AC_Source/ARTemis/ARTemisAll2013A", clear 
 rename IIntId IIntID
 keep IIntID Sex DateOfInitiation
 drop if missing(DateOfInitiation)
@@ -35,7 +35,7 @@ save "`ARTDate'"
 ** Merge if only want to keep individuals linked to ACDIS
 use "`Demo'", clear
 
-merge 1:m ACDIS_IIntID using "$source/LabResults" , keep(match) nogen keepusing(TestDate LabTestCode RESULT AgeTested) 
+merge 1:m ACDIS_IIntID using "$AC_Source/ARTemis/LabResults" , keep(match) nogen keepusing(TestDate LabTestCode RESULT AgeTested) 
 merge m:1 IIntID using "`ARTDate'" , keep(1 3) nogen 
 distinct ACDIS_IIntID 
 
@@ -79,7 +79,7 @@ saveold "$derived/FVLdat", replace
 ***********************************************************************************************************
 ********************************************* Community VL ************************************************
 ***********************************************************************************************************
-use "$source/RD01-01_ACDIS_Individuals", clear
+use "$AC_Data/Individuals/2015/RD01-01_ACDIS_Individuals", clear
 gen Female = (Sex==2)
 keep IIntID DateOfBirth Female 
 duplicates drop IIntID, force

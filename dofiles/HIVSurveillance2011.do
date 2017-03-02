@@ -4,7 +4,7 @@
 //  author:     AV / Created: 13Apr2015 
 
 
-use "$source/RD05-001_ACDIS_HIV", clear
+use "$AC_Data/HIVSurveillance/2015/RD05-001_ACDIS_HIV", clear
 keep IIntID VisitDate HIVResult Sex
 
 ***********************************************************************************************************

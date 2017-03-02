@@ -9,6 +9,8 @@ version 12.1
 ***********************************************************************************************************
 **************************************** Set paths ********************************************************
 ***********************************************************************************************************
+global AC_Data "$home/Documents/AC_Data/Derived/"
+global AC_Source "$home/Documents/AC_Data/Source/"
 global AC_Path "$dropbox/AfricaCentre/Projects/CommunityVL"
 global dofile "$AC_Path/dofiles"
 
