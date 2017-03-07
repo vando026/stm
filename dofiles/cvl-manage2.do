@@ -135,6 +135,7 @@ append using "`HSE2012'"
 
 duplicates drop BSIntID ExpYear AssetIndexQuintile , force
 
+
 bysort BSIntID: egen HSE_mn = mean(AssetIndexQuintile)
 replace AssetIndexQuintile = round(HSE_mn, 1) if missing(AssetIndexQuintile)
 rename AssetIndexQuintile AIQ
@@ -154,7 +155,7 @@ save "`HSE2011'"
 ***********************************************************************************************************
 ******************************************* Individuals ***************************************************
 ***********************************************************************************************************
-use "$AC_Path/Individuals/2015/RD01-01_ACDIS_Individuals", clear
+use "$AC_Data/Individuals/2015/RD01-01_ACDIS_Individuals", clear
 gen Age = round((date("01-01-2011", "DMY")-DateOfBirth)/365.25, 1)
 duplicates drop IIntID, force
 tempfile Individuals
