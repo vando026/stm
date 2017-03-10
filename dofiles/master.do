@@ -38,7 +38,7 @@ do "$dofile/HIVSurveillance2011"
 
 ** This dofile prepares all the CVL and FVL data for analysis
 ** do "$dofile/cvl-manage"
-do "$dofile/DiegoDat"
+** do "$dofile/DiegoDat"
 
 ** This dofile prepares the data for Cox analysis
 do "$dofile/cvl-manage2"

@@ -41,7 +41,7 @@ foreach var of varlist G_PVL P_PDV P_CTI {
 ** log close
 
 ***********************************************************************************************************
-***************************************** PVL Vars ********************************************************
+***************************************** CVL Vars ********************************************************
 ***********************************************************************************************************
 global CVL G_MVL PDV TI 
 foreach mod of global CVL   {
@@ -72,6 +72,62 @@ foreach mod of global PCVL {
 global opts3 "mlabels("Model 0" "Model 1" "Model 2" "Model 3")"
 global opts4 order($PCVL)
 esttab PHIV $PCVL using "$output/Model2.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
+
+
+***********************************************************************************************
+**************************************** PVL by Sex *******************************************
+***********************************************************************************************
+** You must run the PVL code from above for the globals
+forvalue i = 0/1 {
+  local FemLab = cond("`i'"=="1", "Fem", "Mal")
+  dis as text "================ For `FemLab'" _n
+  preserve
+  keep if Female==`i'
+  dis as text "`FemLab'"
+
+  eststo PHIV: stcox $prev , noshow
+  foreach mod of global PCVL {
+    eststo `mod': stcox `mod' i.AgeGrp1 /*$prev $vars*/ , noshow
+    mat `mod' = r(table)
+    mat `mod' = `mod'[1..6,1]'
+  }
+
+  esttab PHIV $PCVL using "$output/Model2`FemLab'.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
+  restore
+}
+
+log using "$output/DropUrban.txt", replace text
+stcox P_PDV i.AgeGrp1 ib1.Marital ib0.PartnerCat ib1.AIQ ib1.urban if Female==0 , noshow
+stcox P_CTI i.AgeGrp1 ib1.Marital ib0.PartnerCat ib1.AIQ if Female==0 , noshow
+log close
+
+
+log using "$output/Interactions.txt", replace text
+global Vars "i.AgeGrp1 ib1.Marital ib0.PartnerCat ib1.AIQ"
+
+
+stcox c.G_PVL##Female $Vars
+qui margins, at(G_PVL=(2(2)19) Female=(0 1)) post
+marginsplot, recast(line) yline(1, lcolor(gs10) lpattern(dash) lwidth(vvthin)) name(GPVL_plot, replace)
+graph export "$output/GPVL_plot.png" , replace
+
+
+stcox c.P_PDV##Female $Vars
+qui margins, at(P_PDV=(6(2)22) Female=(0 1)) post
+marginsplot, recast(line) yline(1, lcolor(gs10) lpattern(dash) lwidth(vvthin)) name(P_PDV_plot, replace)
+graph export "$output/P_PDV_plot.png", replace 
+
+
+stcox c.P_CTI##Female $Vars
+qui margins, at(P_CTI=(1(0.5)7) Female=(0 1)) post
+marginsplot, recast(line) yline(1, lcolor(gs10) lpattern(dash) lwidth(vvthin)) name(P_CTI_plot, replace)
+graph export "$output/P_CTI_plot.png", replace 
+log close
+
+
+
+
+
 
 
 ***********************************************************************************************************
