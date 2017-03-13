@@ -27,7 +27,11 @@ global VLImpute "Yes"
 ** date created
 global today = subinstr("`=c(current_date)'"," ", "",.)
 dis as text "$today"
-set seed 2000000
+
+** for full resulst and female
+** set seed 2013
+** For males 
+set seed 2650
 
 ***********************************************************************************************************
 **************************************** Run do files *****************************************************
@@ -53,10 +57,13 @@ do "$dofile/cvl-analysis2"
 do "$dofile/cvl-analysis3" 
 
 
-mat TT = J(20, 3, .)
+local st 2551
+local stop 2750
+local sn = `stop' - `st' + 1
+mat TT = J(`sn', 3, .)
 local j = 1
 ** The dofiles are to be run in the following sequence
-forvalue i = 2001/2020 {
+forvalue i = `st'/`stop' {
 set seed `i'
 ** This dofile prepares the repeat-tester seroconverion dates
 qui do "$dofile/HIVSurveillance2011"
@@ -64,18 +71,25 @@ qui do "$dofile/HIVSurveillance2011"
 ** This dofile prepares the data for Cox analysis
 qui do "$dofile/cvl-manage2"
 
+qui use "$derived/cvl-analysis2", clear
 qui stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
   origin(EarliestHIVNegative) scale(365.25) 
 
 ** Set covariates here once, so you dont have to do it x times for x models
-qui stcox G_PVL i.AgeGrp1 Female b3.urban ib1.Marital ib0.PartnerCat ib1.AIQ
+qui stcox P_PDV  i.HIV_pcat i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ if Female==0
 mat PMVL = r(table)
-qui stcox P_TI i.AgeGrp1 Female b3.urban ib1.Marital ib0.PartnerCat ib1.AIQ
+qui stcox P_CTI  i.HIV_pcat i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ if Female==0
 mat TI = r(table)
 mat TT[`j', 1] = `i'
 mat TT[`j', 2] = PMVL[4, 1]
 mat TT[`j', 3] = TI[4, 1]
 dis as text "Iter `j'"
+local pdv = TT[`j', 2]
+local cti = TT[`j', 3]
+if `cti'<=0.05 & `pdv'<=0.05 {
+  dis as text _n "Iter `i': PPDV=`pdv' | CTI=`cti'" 
+}
 local ++j
 }
+
 mat list TT

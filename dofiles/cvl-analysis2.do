@@ -11,14 +11,22 @@ use "$derived/cvl-analysis2", clear
 
 gen ID = _n
 stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
-  origin(EarliestHIVNegative) scale(365.25) exit(EndDate) id(ID)
+  origin(EarliestHIVNegative) scale(365.25) 
 
 ** Set covariates here once, so you dont have to do it x times for x models
 global prev "i.HIV_pcat"
 global urban "ib1.urban"
 global vars "Female i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
 
-***********************************************************************************************************
+** For model output
+global opts1 "cells("b(fmt(%9.3f)) ci(par(( - ))) p") substitute(0.000 "<0.001") compress"
+global opts2 "eform varwidth(12) modelwidth(6 13 6) nonumbers nogaps replace aic(0)"
+global opts3 "mlabels("Model 0" "Model 1" "Model 2" "Model 3")"
+global opts6 "drop(0.HIV_pcat 0.AgeGrp1 1.urban 1.Marital 0.PartnerCat 1.AIQ)"
+local opts5 "csv"
+
+
+/***********************************************************************************************************
 **************************************** No Negatives *****************************************************
 ***********************************************************************************************************
 foreach var of varlist G_MVL PDV TI {
@@ -30,32 +38,30 @@ foreach var of varlist G_MVL PDV TI {
 } 
 
 foreach var of varlist G_PVL P_PDV P_CTI {
-  dis as text _n "=========================================> Showing for `var'"
+  dis as text _n "=========================================> Showing for `var' and Males"
+  global vars "ib1.urban i.AgeGrp1 ib1.Marital ib0.PartnerCat ib1.AIQ"
   ** stcox `var', noshow
   ** stcox `var' $vars, noshow
   ** stcox `var' $prev $vars, noshow
   ** stcox `var' HIV_Prev $vars, noshow
-  stcox `var' $prev $urban $vars, noshow
+  stcox `var' i.HIV_pcat i.AgeGrp1 ib1.Marital ib0.PartnerCat ib1.AIQ if Female==0 , noshow
+  vif, uncentered
 } 
 ** stcox $prev
 ** log close
+
 
 ***********************************************************************************************************
 ***************************************** CVL Vars ********************************************************
 ***********************************************************************************************************
 global CVL G_MVL PDV TI 
+global opts4 order($CVL)
 foreach mod of global CVL   {
   eststo `mod': stcox `mod' $prev $vars , noshow
   mat `mod' = r(table)
   mat `mod' = `mod'[1..6,1]'
 }
 
-global opts1 "cells("b(fmt(%9.3f)) ci(par(( - ))) p") substitute(0.000 "<0.001") compress"
-global opts2 "eform varwidth(12) modelwidth(6 13 6) nonumbers nogaps replace aic(0)"
-global opts3 "mlabels("Model 1" "Model 2" "Model 3")"
-global opts4 order($CVL)
-global opts6 "drop(0.HIV_pcat 0.AgeGrp1 1.urban 1.Marital 0.PartnerCat 1.AIQ)"
-local opts5 "csv"
 esttab $CVL using "$output/Model1.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5'  
 
 ***********************************************************************************************************
@@ -63,6 +69,8 @@ esttab $CVL using "$output/Model1.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5'
 ***********************************************************************************************************
 eststo PHIV: stcox $prev $vars, noshow
 global PCVL G_PVL P_PDV P_CTI 
+global opts4 order($PCVL)
+global vars "Female i.AgeGrp1 ib1.Marital ib0.PartnerCat ib1.AIQ"
 foreach mod of global PCVL {
   eststo `mod': stcox `mod' $prev $vars , noshow
   mat `mod' = r(table)
@@ -73,58 +81,39 @@ global opts3 "mlabels("Model 0" "Model 1" "Model 2" "Model 3")"
 global opts4 order($PCVL)
 esttab PHIV $PCVL using "$output/Model2.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
 
-
+*/
 ***********************************************************************************************
 **************************************** PVL by Sex *******************************************
 ***********************************************************************************************
-** You must run the PVL code from above for the globals
-forvalue i = 0/1 {
-  local FemLab = cond("`i'"=="1", "Fem", "Mal")
-  dis as text "================ For `FemLab'" _n
-  preserve
-  keep if Female==`i'
-  dis as text "`FemLab'"
+** For females
+global vars "i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
+global PCVL G_PVL P_PDV P_CTI 
+global opts4 order($PCVL)
 
-  eststo PHIV: stcox $prev , noshow
-  foreach mod of global PCVL {
-    eststo `mod': stcox `mod' i.AgeGrp1 /*$prev $vars*/ , noshow
-    mat `mod' = r(table)
-    mat `mod' = `mod'[1..6,1]'
-  }
 
-  esttab PHIV $PCVL using "$output/Model2`FemLab'.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
-  restore
+preserve
+keep if Female==1 
+eststo PHIV: stcox $prev $vars, noshow
+foreach mod of global PCVL {
+  eststo `mod': stcox `mod' $prev $vars, noshow
+  mat `mod' = r(table)
+  mat `mod' = `mod'[1..6,1]'
+}
+esttab PHIV $PCVL using "$output/Model2Female.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
+restore
+
+
+** For Males
+capture drop HIV_pcat_mal
+egen HIV_pcat_mal = cut(HIV_Prev), at(0, 15, 25, 100) label
+eststo PHIV: stcox $prev $vars if Female==0, noshow
+foreach mod of global PCVL {
+  eststo `mod': stcox `mod' i.HIV_pcat_mal $vars if Female==0, noshow
+  mat `mod' = r(table)
+  mat `mod' = `mod'[1..6,1]'
 }
 
-log using "$output/DropUrban.txt", replace text
-stcox P_PDV i.AgeGrp1 ib1.Marital ib0.PartnerCat ib1.AIQ ib1.urban if Female==0 , noshow
-stcox P_CTI i.AgeGrp1 ib1.Marital ib0.PartnerCat ib1.AIQ if Female==0 , noshow
-log close
-
-
-log using "$output/Interactions.txt", replace text
-global Vars "i.AgeGrp1 ib1.Marital ib0.PartnerCat ib1.AIQ"
-
-
-stcox c.G_PVL##Female $Vars
-qui margins, at(G_PVL=(2(2)19) Female=(0 1)) post
-marginsplot, recast(line) yline(1, lcolor(gs10) lpattern(dash) lwidth(vvthin)) name(GPVL_plot, replace)
-graph export "$output/GPVL_plot.png" , replace
-
-
-stcox c.P_PDV##Female $Vars
-qui margins, at(P_PDV=(6(2)22) Female=(0 1)) post
-marginsplot, recast(line) yline(1, lcolor(gs10) lpattern(dash) lwidth(vvthin)) name(P_PDV_plot, replace)
-graph export "$output/P_PDV_plot.png", replace 
-
-
-stcox c.P_CTI##Female $Vars
-qui margins, at(P_CTI=(1(0.5)7) Female=(0 1)) post
-marginsplot, recast(line) yline(1, lcolor(gs10) lpattern(dash) lwidth(vvthin)) name(P_CTI_plot, replace)
-graph export "$output/P_CTI_plot.png", replace 
-log close
-
-
+esttab PHIV $PCVL using "$output/Model2Male.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
 
 
 

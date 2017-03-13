@@ -6,9 +6,6 @@
 ***********************************************************************************************************
 **************************************** Bring in Datasets*************************************************
 ***********************************************************************************************************
-
-
-
 import excel using "$source/Viral_load_estimation_Dec02.xls", clear firstrow 
 drop FID
 tempfile PVL
@@ -46,7 +43,6 @@ replace P_PDV = P_PDV * 100
 gen HIV_Prev = HIV_Prevalence * 100
 egen HIV_pcat = cut(HIV_Prev), at(0, 15, 25, 100) icode label
 tab HIV_pcat
-
 
 encode(IsUrbanOrR) , gen(urban_ec)
 tab urban_ec 
