@@ -26,7 +26,7 @@ global opts6 "drop(0.HIV_pcat 0.AgeGrp1 1.urban 1.Marital 0.PartnerCat 1.AIQ)"
 local opts5 "csv"
 
 
-/***********************************************************************************************************
+***********************************************************************************************************
 **************************************** No Negatives *****************************************************
 ***********************************************************************************************************
 foreach var of varlist G_MVL PDV TI {
@@ -34,18 +34,16 @@ foreach var of varlist G_MVL PDV TI {
   ** stcox `var', noshow
   ** stcox `var' $vars, noshow
   ** stcox `var' $urban $vars, noshow
-  stcox `var' $prev $vars, noshow
+  stcox `var' $vars, noshow
+  ** stcox `var' $prev $vars, noshow
 } 
 
+global vars "Female ib1.urban i.AgeGrp1 ib1.Marital ib0.PartnerCat ib1.AIQ"
 foreach var of varlist G_PVL P_PDV P_CTI {
   dis as text _n "=========================================> Showing for `var' and Males"
-  global vars "ib1.urban i.AgeGrp1 ib1.Marital ib0.PartnerCat ib1.AIQ"
-  ** stcox `var', noshow
-  ** stcox `var' $vars, noshow
-  ** stcox `var' $prev $vars, noshow
-  ** stcox `var' HIV_Prev $vars, noshow
-  stcox `var' i.HIV_pcat i.AgeGrp1 ib1.Marital ib0.PartnerCat ib1.AIQ if Female==0 , noshow
-  vif, uncentered
+  ** stcox `var' if Female==0 , noshow
+  ** stcox `var' $vars if Female==0, noshow
+  stcox `var' $prev $vars if Female==0, noshow
 } 
 ** stcox $prev
 ** log close
