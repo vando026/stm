@@ -7,6 +7,14 @@
 **************************************** Bring in Datasets*************************************************
 ***********************************************************************************************************
 import excel using "$source/Viral_Load_Estimation_March09.xlsx", clear firstrow 
+foreach i in _Female _Male {
+  rename P_GVL`i' G_PVL`i'
+  rename P_TI`i' P_CTI`i'
+  replace P_CTI`i' = P_CTI`i' * 100
+  replace P_PDV`i' = P_PDV`i' * 100
+  gen HIV_Prev`i' = HIV_Prevalence`i' * 100
+  egen HIV_pcat`i' = cut(HIV_Prev`i'), at(0, 15, 25, 100) icode label
+}
 tempfile PVLFEM
 save "`PVLFEM'" 
 
@@ -32,7 +40,9 @@ keep BSIntID G_MVL PDV TI
 merge 1:1 BSIntID using "`PVL'" , nogen
 merge 1:1 BSIntID using "`FVL'", nogen
 merge 1:1 BSIntID using "`G_FVL'", nogen
-merge 1:1 BSIntID using "`PVLFEM'", nogen keep(1 3)
+if "$PVLFem"=="Yes" {
+  merge 1:1 BSIntID using "`PVLFEM'", nogen keep(1 3)
+}
 
 ** I have to format vars from Diego file
 foreach var of varlist * {
@@ -43,13 +53,12 @@ foreach var of varlist * {
   }
 }
 
+
 ** Make HIV prev a percent
-foreach i in "" _Female _Male {
-  replace P_PDV`i' = P_PDV`i' * 100
-  gen HIV_Prev`i' = HIV_Prevalence`i' * 100
-  egen HIV_pcat`i' = cut(HIV_Prev`i'), at(0, 15, 25, 100) icode label
-  tab HIV_pcat`i'
-}
+replace P_PDV = P_PDV * 100
+gen HIV_Prev = HIV_Prevalence * 100
+egen HIV_pcat = cut(HIV_Prev), at(0, 15, 25, 100) icode label
+tab HIV_pcat
 
 encode(IsUrbanOrR) , gen(urban_ec)
 tab urban_ec 

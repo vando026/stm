@@ -28,10 +28,14 @@ global VLImpute "Yes"
 global today = subinstr("`=c(current_date)'"," ", "",.)
 dis as text "$today"
 
-** for full resulst and female
-** set seed 2013
-** For males 
-set seed 2650
+global PVLFem = "Yes"
+
+if "$PVLFem" == "Yes" {
+  set seed 2650
+}
+else {
+  set seed 2013
+}
 
 ***********************************************************************************************************
 **************************************** Run do files *****************************************************
@@ -51,7 +55,12 @@ do "$dofile/cvl-manage2"
 ** do "$dofile/cvl-analysis"
 
 ** This dofile does Cox models
-do "$dofile/cvl-analysis2"
+if "$PVLFem" == "Yes" {
+  do "$dofile/cvl-analysis2females"
+}
+else  {
+  do "$dofile/cvl-analysis2"
+}
 
 ** This does incidence by quartile
 do "$dofile/cvl-analysis3" 

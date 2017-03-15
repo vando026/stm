@@ -15,7 +15,6 @@ stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
 
 ** Set covariates here once, so you dont have to do it x times for x models
 global prev "i.HIV_pcat"
-global urban "ib1.urban"
 global vars "Female i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
 
 ** For model output
@@ -26,7 +25,7 @@ global opts6 "drop(0.HIV_pcat 0.AgeGrp1 1.urban 1.Marital 0.PartnerCat 1.AIQ)"
 local opts5 "csv"
 
 
-***********************************************************************************************************
+/***********************************************************************************************************
 **************************************** No Negatives *****************************************************
 ***********************************************************************************************************
 foreach var of varlist G_MVL PDV TI {
@@ -34,7 +33,7 @@ foreach var of varlist G_MVL PDV TI {
   ** stcox `var', noshow
   ** stcox `var' $vars, noshow
   ** stcox `var' $urban $vars, noshow
-  stcox `var' $vars, noshow
+  ** stcox `var' $vars, noshow
   ** stcox `var' $prev $vars, noshow
 } 
 
@@ -43,71 +42,142 @@ foreach var of varlist G_PVL P_PDV P_CTI {
   dis as text _n "=========================================> Showing for `var' and Males"
   ** stcox `var' if Female==0 , noshow
   ** stcox `var' $vars if Female==0, noshow
-  ** stcox `var' i.HIV_pcat_female $vars if Female==0, noshow
+  stcox `var' $prev $vars, noshow
 } 
 ** stcox $prev
 ** log close
-
-
-stcox P_PDV_Male i.HIV_pcat_Male $vars if Female==1, noshow
-stcox P_PDV_Male $vars if Female==1, noshow
-
-stcox P_GVL_Male i.HIV_pcat_Male $vars if Female==1, noshow
-stcox P_GVL_Male $vars if Female==1, noshow
-
-stcox P_TI_Male i.HIV_pcat_Male $vars if Female==1, noshow
-stcox P_TI_Male $vars if Female==1, noshow
-
-
-
-
-
-stcox P_GVL_Male  $vars if Female==1, noshow
+*/
 
 ***********************************************************************************************************
-***************************************** CVL Vars ********************************************************
+***************************************** Table 3 unadjusted **********************************************
 ***********************************************************************************************************
+global opts11 "cells("b(fmt(%9.3f)) ci(par(( - ))) p") substitute(0.000 "<0.001")"
+global opts12 "nomti nogaps noobs eform nonumbers compress nonumbers nonotes mlabels(none) collabels(none)"
+eststo mm: stcox $prev, noshow
+esttab mm using "$output/Model1_Unad.`opts5'", $opts11 $opts12 replace
+
+global opts4 order($vars)
+foreach var of global vars   {
+  eststo mm: stcox `var' , noshow
+  esttab mm using "$output/Model1_Unad.`opts5'", $opts11 $opts12 append
+}
+
+***********************************************************************************************************
+***************************************** C_PVL vars ******************************************************
+***********************************************************************************************************
+** Set 1
+eststo mm: stcox G_MVL, noshow
+esttab mm using "$output/Model_CVL_Unad.`opts5'", $opts11 $opts12 replace
+
+foreach var in PDV TI   {
+  eststo mm: stcox `var' , noshow
+  esttab mm using "$output/Model_CVL_Unad.`opts5'", $opts11 $opts12 append
+}
+
+** Set 2
 global CVL G_MVL PDV TI 
+global vars "Female i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
+foreach mod of global CVL {
+  eststo `mod': stcox `mod' $vars , noshow
+}
+global opts3 "mlabels("Model 1" "Model 2" "Model 3")"
 global opts4 order($CVL)
-foreach mod of global CVL   {
+esttab $CVL using "$output/Model_CVL_Cov.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
+
+** Set 3
+foreach mod of global CVL {
   eststo `mod': stcox `mod' $prev $vars , noshow
   mat `mod' = r(table)
   mat `mod' = `mod'[1..6,1]'
 }
-
-esttab $CVL using "$output/Model1.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5'  
+global opts4 order($CVL)
+esttab $CVL using "$output/Model_CVL_All.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
 
 ***********************************************************************************************************
 ***************************************** P_PVL vars ******************************************************
 ***********************************************************************************************************
-eststo PHIV: stcox $prev $vars, noshow
+** Set 1
+eststo mm: stcox G_PVL, noshow
+esttab mm using "$output/Model_PVL_Unad.`opts5'", $opts11 $opts12 replace
+
+foreach var in P_PDV P_CTI   {
+  eststo mm: stcox `var' , noshow
+  esttab mm using "$output/Model_PVL_Unad.`opts5'", $opts11 $opts12 append
+}
+
+** Set 2
 global PCVL G_PVL P_PDV P_CTI 
 global opts4 order($PCVL)
-global vars "Female i.AgeGrp1 ib1.Marital ib0.PartnerCat ib1.AIQ"
+global vars "Female i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
+foreach mod of global PCVL {
+  eststo `mod': stcox `mod' $vars , noshow
+}
+global opts3 "mlabels("Model 1" "Model 2" "Model 3")"
+global opts4 order($PCVL)
+esttab $PCVL using "$output/Model_PVL_Cov.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
+
+** Set 3
 foreach mod of global PCVL {
   eststo `mod': stcox `mod' $prev $vars , noshow
   mat `mod' = r(table)
   mat `mod' = `mod'[1..6,1]'
 }
-
-global opts3 "mlabels("Model 0" "Model 1" "Model 2" "Model 3")"
 global opts4 order($PCVL)
-esttab PHIV $PCVL using "$output/Model2.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
+esttab $PCVL using "$output/Model_PVL_All.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
 
-*/
+
+***********************************************************************************************************
+***************************************** P_PVL vars males **********************************************
+***********************************************************************************************************
+** Set 1
+eststo mm: stcox G_PVL_Female if Female==0, noshow
+esttab mm using "$output/Model_PVL_Unad_Mal.`opts5'", $opts11 $opts12 replace
+
+foreach var in P_PDV P_CTI   {
+  eststo mm: stcox `var' , noshow
+  esttab mm using "$output/Model_PVL_Unad.`opts5'", $opts11 $opts12 append
+}
+
+** Set 2
+global PCVL G_PVL P_PDV P_CTI 
+global opts4 order($PCVL)
+global vars "Female i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
+foreach mod of global PCVL {
+  eststo `mod': stcox `mod' $vars , noshow
+}
+global opts3 "mlabels("Model 1" "Model 2" "Model 3")"
+global opts4 order($PCVL)
+esttab $PCVL using "$output/Model_PVL_Cov.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
+
+** Set 3
+foreach mod of global PCVL {
+  eststo `mod': stcox `mod' $prev $vars , noshow
+  mat `mod' = r(table)
+  mat `mod' = `mod'[1..6,1]'
+}
+global opts4 order($PCVL)
+esttab $PCVL using "$output/Model_PVL_All.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
+
+
+
 ***********************************************************************************************
 **************************************** PVL by Sex *******************************************
 ***********************************************************************************************
 ** For females
 global vars "i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
-global PCVL G_PVL P_PDV P_CTI 
-global opts4 order($PCVL)
+global PCVLf G_PVL_Female P_PDV_Female P_CTI_Female 
+global opts4 order($PCVLf)
+
+
+
+
+
 
 
 preserve
-keep if Female==1 
+keep if Female==0 
 eststo PHIV: stcox $prev $vars, noshow
-foreach mod of global PCVL {
+foreach mod of global PCVLf {
   eststo `mod': stcox `mod' $prev $vars, noshow
   mat `mod' = r(table)
   mat `mod' = `mod'[1..6,1]'
@@ -129,18 +199,38 @@ foreach mod of global PCVL {
 esttab PHIV $PCVL using "$output/Model2Male.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
 
 
-
-
-
 ***********************************************************************************************************
-**************************************** FVL vars *********************************************************
+***************************************** P_FVL vars ******************************************************
 ***********************************************************************************************************
-global FVL G_FVL FVL_PDV FVL_TI
+** Set 1
+eststo mm: stcox G_FVL, noshow
+esttab mm using "$output/Model_FVL_Unad.`opts5'", $opts11 $opts12 replace
+
+foreach var in FVL_PDV FVL_TI   {
+  eststo mm: stcox `var' , noshow
+  esttab mm using "$output/Model_FVL_Unad.`opts5'", $opts11 $opts12 append
+}
+
+** Set 2
+global FVL G_FVL FVL_PDV FVL_TI 
+global opts4 order($FVL)
+global vars "Female i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
 foreach mod of global FVL {
-  eststo `mod': stcox `mod' $prev $vars, noshow
+  eststo `mod': stcox `mod' $vars , noshow
+}
+global opts3 "mlabels("Model 1" "Model 2" "Model 3")"
+global opts4 order($FVL)
+esttab $FVL using "$output/Model_FVL_Cov.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
+
+** Set 3
+foreach mod of global FVL {
+  eststo `mod': stcox `mod' $prev $vars , noshow
+  mat `mod' = r(table)
+  mat `mod' = `mod'[1..6,1]'
 }
 global opts4 order($FVL)
-esttab $FVL using "$output/Model3.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
+esttab $FVL using "$output/Model_FVL_All.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
+
 
 
 ***********************************************************************************************************
