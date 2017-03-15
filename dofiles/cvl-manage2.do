@@ -6,6 +6,10 @@
 ***********************************************************************************************************
 **************************************** Bring in Datasets*************************************************
 ***********************************************************************************************************
+import excel using "$source/Viral_Load_Estimation_March09.xlsx", clear firstrow 
+tempfile PVLFEM
+save "`PVLFEM'" 
+
 import excel using "$source/Viral_load_estimation_Dec02.xls", clear firstrow 
 drop FID
 tempfile PVL
@@ -28,6 +32,7 @@ keep BSIntID G_MVL PDV TI
 merge 1:1 BSIntID using "`PVL'" , nogen
 merge 1:1 BSIntID using "`FVL'", nogen
 merge 1:1 BSIntID using "`G_FVL'", nogen
+merge 1:1 BSIntID using "`PVLFEM'", nogen keep(1 3)
 
 ** I have to format vars from Diego file
 foreach var of varlist * {
@@ -39,10 +44,12 @@ foreach var of varlist * {
 }
 
 ** Make HIV prev a percent
-replace P_PDV = P_PDV * 100
-gen HIV_Prev = HIV_Prevalence * 100
-egen HIV_pcat = cut(HIV_Prev), at(0, 15, 25, 100) icode label
-tab HIV_pcat
+foreach i in "" _Female _Male {
+  replace P_PDV`i' = P_PDV`i' * 100
+  gen HIV_Prev`i' = HIV_Prevalence`i' * 100
+  egen HIV_pcat`i' = cut(HIV_Prev`i'), at(0, 15, 25, 100) icode label
+  tab HIV_pcat`i'
+}
 
 encode(IsUrbanOrR) , gen(urban_ec)
 tab urban_ec 

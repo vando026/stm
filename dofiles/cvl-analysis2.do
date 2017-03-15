@@ -43,11 +43,26 @@ foreach var of varlist G_PVL P_PDV P_CTI {
   dis as text _n "=========================================> Showing for `var' and Males"
   ** stcox `var' if Female==0 , noshow
   ** stcox `var' $vars if Female==0, noshow
-  stcox `var' $prev $vars if Female==0, noshow
+  ** stcox `var' i.HIV_pcat_female $vars if Female==0, noshow
 } 
 ** stcox $prev
 ** log close
 
+
+stcox P_PDV_Male i.HIV_pcat_Male $vars if Female==1, noshow
+stcox P_PDV_Male $vars if Female==1, noshow
+
+stcox P_GVL_Male i.HIV_pcat_Male $vars if Female==1, noshow
+stcox P_GVL_Male $vars if Female==1, noshow
+
+stcox P_TI_Male i.HIV_pcat_Male $vars if Female==1, noshow
+stcox P_TI_Male $vars if Female==1, noshow
+
+
+
+
+
+stcox P_GVL_Male  $vars if Female==1, noshow
 
 ***********************************************************************************************************
 ***************************************** CVL Vars ********************************************************
