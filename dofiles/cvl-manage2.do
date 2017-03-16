@@ -6,14 +6,12 @@
 ***********************************************************************************************************
 **************************************** Bring in Datasets*************************************************
 ***********************************************************************************************************
-import excel using "$source/Viral_Load_Estimation_March09.xlsx", clear firstrow 
+import excel using "$source/Viral_Load_Estimation_March15.xlsx", clear firstrow 
 foreach i in _Female _Male {
   rename P_GVL`i' G_PVL`i'
   rename P_TI`i' P_CTI`i'
-  replace P_CTI`i' = P_CTI`i' * 100
   replace P_PDV`i' = P_PDV`i' * 100
   gen HIV_Prev`i' = HIV_Prevalence`i' * 100
-  egen HIV_pcat`i' = cut(HIV_Prev`i'), at(0, 15, 25, 100) icode label
 }
 tempfile PVLFEM
 save "`PVLFEM'" 
