@@ -68,7 +68,6 @@ foreach var of global vars   {
 ** Set 1
 eststo mm: stcox G_MVL, noshow
 esttab mm using "$output/Model_CVL_Unad.`opts5'", $opts11 $opts12 replace
-
 foreach var in PDV TI   {
   eststo mm: stcox `var' , noshow
   esttab mm using "$output/Model_CVL_Unad.`opts5'", $opts11 $opts12 append
@@ -99,7 +98,6 @@ esttab $CVL using "$output/Model_CVL_All.`opts5'", $opts1 $opts2 $opts3 $opts4 `
 ** Set 1
 eststo mm: stcox G_PVL, noshow
 esttab mm using "$output/Model_PVL_Unad.`opts5'", $opts11 $opts12 replace
-
 foreach var in P_PDV P_CTI   {
   eststo mm: stcox `var' , noshow
   esttab mm using "$output/Model_PVL_Unad.`opts5'", $opts11 $opts12 append
@@ -124,79 +122,6 @@ foreach mod of global PCVL {
 }
 global opts4 order($PCVL)
 esttab $PCVL using "$output/Model_PVL_All.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
-
-
-***********************************************************************************************************
-***************************************** P_PVL vars males **********************************************
-***********************************************************************************************************
-** Set 1
-eststo mm: stcox G_PVL_Female if Female==0, noshow
-esttab mm using "$output/Model_PVL_Unad_Mal.`opts5'", $opts11 $opts12 replace
-
-foreach var in P_PDV P_CTI   {
-  eststo mm: stcox `var' , noshow
-  esttab mm using "$output/Model_PVL_Unad.`opts5'", $opts11 $opts12 append
-}
-
-** Set 2
-global PCVL G_PVL P_PDV P_CTI 
-global opts4 order($PCVL)
-global vars "Female i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
-foreach mod of global PCVL {
-  eststo `mod': stcox `mod' $vars , noshow
-}
-global opts3 "mlabels("Model 1" "Model 2" "Model 3")"
-global opts4 order($PCVL)
-esttab $PCVL using "$output/Model_PVL_Cov.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
-
-** Set 3
-foreach mod of global PCVL {
-  eststo `mod': stcox `mod' $prev $vars , noshow
-  mat `mod' = r(table)
-  mat `mod' = `mod'[1..6,1]'
-}
-global opts4 order($PCVL)
-esttab $PCVL using "$output/Model_PVL_All.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
-
-
-
-***********************************************************************************************
-**************************************** PVL by Sex *******************************************
-***********************************************************************************************
-** For females
-global vars "i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
-global PCVLf G_PVL_Female P_PDV_Female P_CTI_Female 
-global opts4 order($PCVLf)
-
-
-
-
-
-
-
-preserve
-keep if Female==0 
-eststo PHIV: stcox $prev $vars, noshow
-foreach mod of global PCVLf {
-  eststo `mod': stcox `mod' $prev $vars, noshow
-  mat `mod' = r(table)
-  mat `mod' = `mod'[1..6,1]'
-}
-esttab PHIV $PCVL using "$output/Model2Female.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
-restore
-
-
-** For Males
-capture drop HIV_pcat_mal
-egen HIV_pcat_mal = cut(HIV_Prev), at(0, 15, 25, 100) label
-eststo PHIV: stcox $prev $vars if Female==0, noshow
-foreach mod of global PCVL {
-  eststo `mod': stcox `mod' i.HIV_pcat_mal $vars if Female==0, noshow
-  mat `mod' = r(table)
-  mat `mod' = `mod'[1..6,1]'
-}
-
-esttab PHIV $PCVL using "$output/Model2Male.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
 
 
 ***********************************************************************************************************
@@ -205,7 +130,6 @@ esttab PHIV $PCVL using "$output/Model2Male.`opts5'", $opts1 $opts2 $opts3 $opts
 ** Set 1
 eststo mm: stcox G_FVL, noshow
 esttab mm using "$output/Model_FVL_Unad.`opts5'", $opts11 $opts12 replace
-
 foreach var in FVL_PDV FVL_TI   {
   eststo mm: stcox `var' , noshow
   esttab mm using "$output/Model_FVL_Unad.`opts5'", $opts11 $opts12 append
@@ -333,3 +257,20 @@ foreach var of varlist _Rate _Lower _Upper {
 }
 order VarLab, first
 export delimited using "$output\IncidenceOut.csv", replace
+
+
+
+
+***********************************************************************************************
+**************************************** Refusal **********************************************
+***********************************************************************************************
+use "$AC_Data/HIVSurveillance/2015/RD05-001_ACDIS_HIV", clear
+keep IIntID VisitDate HIVRefused HIVResult AgeAtVisit Sex 
+gen Year = year(VisitDate)
+keep if Year==2011
+keep if AgeAtVisit >= 15
+drop if AgeAtVisit > 55 & Sex==1 
+drop if AgeAtVisit > 50 & Sex==2 
+bysort Sex: sum AgeAtVisit
+gen HIVRefusedRC = (HIVRefused==1)
+tab1 HIVRefused*

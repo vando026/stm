@@ -244,7 +244,6 @@ gen Replace = 1+int((3-1+1)*runiform())
 replace Marital = Replace if missing(Marital)
 tab Marital , miss
 replace PartnerCat = 0 if missing(PartnerCat) & Age < 18
-set seed 2000000
 replace PartnerCat = rbinomial(2, 0.5) if missing(PartnerCat)
 drop Replace Partners
 tempfile Ind
