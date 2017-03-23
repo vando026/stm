@@ -36,18 +36,19 @@ foreach var of varlist G_MVL PDV TI {
   ** stcox `var' $vars, noshow
   ** stcox `var' $prev $vars, noshow
 } 
+*/
 
 global vars "Female ib1.urban i.AgeGrp1 ib1.Marital ib0.PartnerCat ib1.AIQ"
-foreach var of varlist G_PVL P_PDV P_CTI {
+** foreach var of varlist G_PVL P_PDV P_CTI {
+foreach var of varlist G_MVL PDV TI {
   dis as text _n "=========================================> Showing for `var' and Males"
-  ** stcox `var' if Female==0 , noshow
-  ** stcox `var' $vars if Female==0, noshow
-  stcox `var' $prev $vars, noshow
+  cap drop sch* sca* 
+  qui stcox `var' $vars, noshow schoenfeld(sch*) scaledsch(sca*)
+  stphtest, detail
 } 
 ** stcox $prev
 ** log close
-*/
-
+** As for the PH assumption, one can run a test to determine the particular variable that "violates" the PH assumption. In this case it is the Sex and Age variables. 
 ***********************************************************************************************************
 ***************************************** Table 3 unadjusted **********************************************
 ***********************************************************************************************************
@@ -62,9 +63,14 @@ foreach var of global vars   {
   esttab mm using "$output/Model1_Unad.`opts5'", $opts11 $opts12 append
 }
 
+stcox $vars
+dis  -2*`=e(ll)' + 2*(`=e(df_m)' + 1)
+
+
 ***********************************************************************************************************
-***************************************** C_PVL vars ******************************************************
+***************************************** CVL vars ******************************************************
 ***********************************************************************************************************
+global CVL G_MVL PDV TI 
 ** Set 1
 eststo mm: stcox G_MVL, noshow
 esttab mm using "$output/Model_CVL_Unad.`opts5'", $opts11 $opts12 replace
@@ -74,7 +80,6 @@ foreach var in PDV TI   {
 }
 
 ** Set 2
-global CVL G_MVL PDV TI 
 global vars "Female i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
 foreach mod of global CVL {
   eststo `mod': stcox `mod' $vars , noshow

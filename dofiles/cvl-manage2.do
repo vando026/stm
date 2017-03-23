@@ -6,6 +6,18 @@
 ***********************************************************************************************************
 **************************************** Bring in Datasets*************************************************
 ***********************************************************************************************************
+import excel using "$source/Viral_Load_Estimation_March20.xlsx", clear firstrow 
+replace PDV_Male = PDV_Male * 100
+tempfile PVLMAL
+save "`PVLMAL'" 
+
+import excel using "$source/Viral_Load_Estimation_March22.xlsx", clear firstrow 
+keep BSIntID GVL_Female PDV_Female TI_Female
+replace PDV_Female = PDV_Female * 100
+tempfile PVLFEM
+save "`PVLFEM'" 
+
+
 import excel using "$source/Viral_Load_Estimation_March15.xlsx", clear firstrow 
 foreach i in _Female _Male {
   rename P_GVL`i' G_PVL`i'
@@ -13,8 +25,8 @@ foreach i in _Female _Male {
   replace P_PDV`i' = P_PDV`i' * 100
   gen HIV_Prev`i' = HIV_Prevalence`i' * 100
 }
-tempfile PVLFEM
-save "`PVLFEM'" 
+tempfile PPVLSex
+save "`PPVLSex'" 
 
 import excel using "$source/Viral_load_estimation_Dec02.xls", clear firstrow 
 drop FID
@@ -40,6 +52,8 @@ merge 1:1 BSIntID using "`FVL'", nogen
 merge 1:1 BSIntID using "`G_FVL'", nogen
 if "$PVLFem"=="Yes" {
   merge 1:1 BSIntID using "`PVLFEM'", nogen keep(1 3)
+  merge 1:1 BSIntID using "`PPVLSex'", nogen keep(1 3)
+  merge 1:1 BSIntID using "`PVLMAL'", nogen keep(1 3)
 }
 
 ** I have to format vars from Diego file
@@ -60,6 +74,7 @@ tab HIV_pcat
 
 encode(IsUrbanOrR) , gen(urban_ec)
 tab urban_ec 
+set seed 2000000
 gen Replace = 2+int((4-1)*runiform())
 replace urban_ec = Replace if urban_ec==1
 recode urban_ec (3=1) (1=2) (4=3), gen(urban)

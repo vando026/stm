@@ -37,7 +37,6 @@ global opts12 "nomti nogaps noobs eform nonumbers compress nonumbers nonotes mla
 eststo mm: stcox i.HIV_pcat_Female, noshow
 esttab mm using "$output/Model1_Unad_Mal.`opts5'", $opts11 $opts12 replace
 
-global opts4 order($vars)
 foreach var of global vars   {
   eststo mm: stcox `var' if Female==0 , noshow
   esttab mm using "$output/Model1_Unad_Mal.`opts5'", $opts11 $opts12 append
