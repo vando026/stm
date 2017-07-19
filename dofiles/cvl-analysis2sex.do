@@ -114,5 +114,27 @@ global opts4 order($PCVLf)
 esttab $PCVLf using "$output/Model_PVL_All_Fem.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
 
 ***********************************************************************************************
+**************************************** Frank Grant analysis *********************************
 ***********************************************************************************************
-***********************************************************************************************
+use "$derived/cvl-analysis2", clear
+
+gen ID = _n
+stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
+  origin(EarliestHIVNegative) scale(365.25) if(Female==1 & inrange(Age, 15, 30))
+
+capture drop HIV_pcat_Female
+egen HIV_pcat_Female = cut(HIV_Prev_Female), at(0, 20, 25, 35, 40) icode label
+
+capture drop HIV_pcat_Male
+egen HIV_pcat_Male = cut(HIV_Prev_Male), at(0, 5, 10, 15, 25) icode label
+
+global vars "i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
+
+log using "$output/FrankGrant.txt", text 
+** Set 3
+global PCVLf G_PVL_Male P_PDV_Male P_CTI_Male 
+foreach mod of global PCVLf {
+  stcox `mod', noshow
+  stcox `mod' i.HIV_pcat_Male $vars, noshow
+}
+log close
