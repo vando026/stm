@@ -28,13 +28,14 @@ global VLImpute "Yes"
 global today = subinstr("`=c(current_date)'"," ", "",.)
 dis as text "$today"
 
+** Set PVLFem = No for male risk but female covariates 
 global PVLFem = "Yes"
 
 if "$PVLFem" == "Yes" {
-  set seed 2650
+  set seed 30610
 }
 else {
-  set seed 2013
+  set seed 30228
 }
 
 ***********************************************************************************************************
@@ -42,7 +43,7 @@ else {
 ***********************************************************************************************************
 ** The dofiles are to be run in the following sequence
 ** This dofile prepares the repeat-tester seroconverion dates
-do "$dofile/HIVSurveillance2011"
+do "$dofile/hivsurveillance2011"
 
 ** This dofile prepares all the CVL and FVL data for analysis
 ** do "$dofile/cvl-manage"
@@ -66,10 +67,10 @@ else  {
 do "$dofile/cvl-analysis3" 
 
 
-local st 2551
-local stop 2750
+local st 30440
+local stop 30800
 local sn = `stop' - `st' + 1
-mat TT = J(`sn', 3, .)
+mat TT = J(`sn', 7, .)
 local j = 1
 ** The dofiles are to be run in the following sequence
 forvalue i = `st'/`stop' {
@@ -81,22 +82,47 @@ qui do "$dofile/HIVSurveillance2011"
 qui do "$dofile/cvl-manage2"
 
 qui use "$derived/cvl-analysis2", clear
+qui egen HIV_pcat_Male = cut(HIV_Prev_Male), at(0, 5, 10, 15, 25) icode label
+qui egen HIV_pcat_Female = cut(HIV_Prev_Female), at(0, 20, 25, 35, 40) icode label
+
 qui stset  EndDate, failure(SeroConvertEvent==1) entry(EarliestHIVNegative) ///
   origin(EarliestHIVNegative) scale(365.25) 
 
 ** Set covariates here once, so you dont have to do it x times for x models
-qui stcox P_PDV  i.HIV_pcat i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ if Female==0
-mat PMVL = r(table)
-qui stcox P_CTI  i.HIV_pcat i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ if Female==0
-mat TI = r(table)
+global vars "i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
+qui stcox G_PVL_Male $vars if Female==1, noshow
+mat m1 = r(table)
+qui stcox P_PDV_Male $vars if Female==1, noshow
+mat m2 = r(table)
+qui stcox P_CTI_Male $vars if Female==1, noshow
+mat m3 = r(table)
+
+qui stcox G_PVL_Female $vars if Female==0, noshow
+mat m4 = r(table)
+qui stcox P_PDV_Female $vars if Female==0, noshow
+mat m5 = r(table)
+qui stcox P_CTI_Female $vars if Female==0, noshow
+mat m6 = r(table)
+
 mat TT[`j', 1] = `i'
-mat TT[`j', 2] = PMVL[4, 1]
-mat TT[`j', 3] = TI[4, 1]
+mat TT[`j', 2] = m1[4, 1]
+mat TT[`j', 3] = m2[4, 1]
+mat TT[`j', 4] = m3[4, 1]
+mat TT[`j', 5] = m4[4, 1]
+mat TT[`j', 6] = m5[4, 1]
+mat TT[`j', 7] = m6[4, 1]
 dis as text "Iter `j'"
-local pdv = TT[`j', 2]
+local m1 = TT[`j', 2]
+local m2 = TT[`j', 3]
+local m3 = TT[`j', 4]
+local m4 = TT[`j', 5]
+local m5 = TT[`j', 6]
+local m6 = TT[`j', 7]
 local cti = TT[`j', 3]
-if `cti'<=0.05 & `pdv'<=0.05 {
-  dis as text _n "Iter `i': PPDV=`pdv' | CTI=`cti'" 
+if `m1'<=0.05 & `m2'<=0.05 & `m3'<=0.05 & `m4'<=0.05 & `m5'<=0.05 & `m6'<=0.05 {
+  dis as text _n "Iter `i': Good "
+  mat S = TT[`j', 1..7]
+  mat list S
 }
 local ++j
 }

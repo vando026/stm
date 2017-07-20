@@ -50,11 +50,9 @@ keep BSIntID G_MVL PDV TI
 merge 1:1 BSIntID using "`PVL'" , nogen
 merge 1:1 BSIntID using "`FVL'", nogen
 merge 1:1 BSIntID using "`G_FVL'", nogen
-if "$PVLFem"=="Yes" {
-  merge 1:1 BSIntID using "`PVLFEM'", nogen keep(1 3)
-  merge 1:1 BSIntID using "`PPVLSex'", nogen keep(1 3)
-  merge 1:1 BSIntID using "`PVLMAL'", nogen keep(1 3)
-}
+merge 1:1 BSIntID using "`PVLFEM'", nogen keep(1 3)
+merge 1:1 BSIntID using "`PPVLSex'", nogen keep(1 3)
+merge 1:1 BSIntID using "`PVLMAL'", nogen keep(1 3)
 
 ** I have to format vars from Diego file
 foreach var of varlist * {
