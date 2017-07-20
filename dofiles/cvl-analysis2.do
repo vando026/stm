@@ -25,19 +25,9 @@ global opts6 "drop(0.HIV_pcat 0.AgeGrp1 1.urban 1.Marital 0.PartnerCat 1.AIQ)"
 local opts5 "csv"
 
 
-/***********************************************************************************************************
+***********************************************************************************************************
 **************************************** No Negatives *****************************************************
 ***********************************************************************************************************
-foreach var of varlist G_MVL PDV TI {
-  dis as text _n "=========================================> Showing for `var'"
-  ** stcox `var', noshow
-  ** stcox `var' $vars, noshow
-  ** stcox `var' $urban $vars, noshow
-  ** stcox `var' $vars, noshow
-  ** stcox `var' $prev $vars, noshow
-} 
-*/
-
 global vars "Female ib1.urban i.AgeGrp1 ib1.Marital ib0.PartnerCat ib1.AIQ"
 ** foreach var of varlist G_PVL P_PDV P_CTI {
 foreach var of varlist G_MVL PDV TI {
@@ -71,7 +61,7 @@ dis  -2*`=e(ll)' + 2*(`=e(df_m)' + 1)
 ***************************************** CVL vars ******************************************************
 ***********************************************************************************************************
 global CVL G_MVL PDV TI 
-** Set 1
+** Set 1 unadjusted 
 eststo mm: stcox G_MVL, noshow
 esttab mm using "$output/Model_CVL_Unad.`opts5'", $opts11 $opts12 replace
 foreach var in PDV TI   {

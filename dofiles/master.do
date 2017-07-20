@@ -31,12 +31,7 @@ dis as text "$today"
 ** Set PVLFem = No for male risk but female covariates 
 global PVLFem = "Yes"
 
-if "$PVLFem" == "Yes" {
-  set seed 30610
-}
-else {
-  set seed 30228
-}
+set seed 30610
 
 ***********************************************************************************************************
 **************************************** Run do files *****************************************************
@@ -55,16 +50,11 @@ do "$dofile/cvl-manage2"
 ** This dofile prepares the graphs (note it relies on an adofile)
 ** do "$dofile/cvl-analysis"
 
-** This dofile does Cox models
-if "$PVLFem" == "Yes" {
-  do "$dofile/cvl-analysis2females"
-}
-else  {
-  do "$dofile/cvl-analysis2"
-}
-
 ** This does incidence by quartile
-do "$dofile/cvl-analysis3" 
+** do "$dofile/cvl-analysis1" 
+
+** This dofile does Cox models
+** do "$dofile/cvl-analysis2"
 
 
 local st 30440

@@ -67,7 +67,7 @@ foreach var of varlist * {
 ** Make HIV prev a percent
 replace P_PDV = P_PDV * 100
 gen HIV_Prev = HIV_Prevalence * 100
-egen HIV_pcat = cut(HIV_Prev), at(0, 15, 25, 100) icode label
+egen HIV_pcat = cut(HIV_Prev), at(0, 10, 15, 25, 100) icode label
 tab HIV_pcat
 
 encode(IsUrbanOrR) , gen(urban_ec)
@@ -283,6 +283,14 @@ foreach var of varlist PDV - AgeGrp1 {
   qui keep if !missing(`var')
     ** dis as text `var' 
 }
+
+** egen HIV_pcat
+
+capture drop HIV_pcat_Female
+egen HIV_pcat_Female = cut(HIV_Prev_Female), at(0, 20, 25, 35, 50) icode label
+
+capture drop HIV_pcat_Male
+egen HIV_pcat_Male = cut(HIV_Prev_Male), at(0, 2.5, 5, 10, 20) icode label
 
 saveold "$derived/cvl-analysis2", replace
 
