@@ -28,9 +28,6 @@ global VLImpute "Yes"
 global today = subinstr("`=c(current_date)'"," ", "",.)
 dis as text "$today"
 
-** Set PVLFem = No for male risk but female covariates 
-global PVLFem = "Yes"
-
 set seed 30610
 
 ***********************************************************************************************************
