@@ -77,6 +77,8 @@ gen Over50k = (ViralLoad>50000)
 
 tab Female
 tab AgeGrp
+tab DetectVL
+tab Over50k
 
 ameans ViralLoad
 ** Comute geometric mean
