@@ -44,6 +44,12 @@ keep BSIntID G_FVL
 tempfile G_FVL
 save "`G_FVL'" 
 
+use "$source/ART Coverage and HIV prevalence by BS_final_v12", clear
+keep BSIntID X_2011artcoverage_1
+rename X_2011artcoverage_1 ARTCov2011
+replace ARTCov2011 = ARTCov2011 * 100
+tempfile ARTCov2011
+save "`ARTCov2011'" 
 
 import excel using "$source/Viral_load_estimation_Oct22.xls", clear firstrow 
 keep BSIntID G_MVL PDV TI
@@ -53,6 +59,10 @@ merge 1:1 BSIntID using "`G_FVL'", nogen
 merge 1:1 BSIntID using "`PVLFEM'", nogen keep(1 3)
 merge 1:1 BSIntID using "`PPVLSex'", nogen keep(1 3)
 merge 1:1 BSIntID using "`PVLMAL'", nogen keep(1 3)
+merge 1:1 BSIntID using "`ARTCov2011'", nogen keep(1 3) 
+
+
+
 
 ** I have to format vars from Diego file
 foreach var of varlist * {
