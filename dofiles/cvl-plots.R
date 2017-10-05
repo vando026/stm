@@ -24,9 +24,9 @@ plotCVL <- function(dat, main, cols, ylim2, ylab2="") {
   scols <- c(rep(cols[1], len),rep(cols[2], len))
 
   with(dat, plotCI(Age, mean, ui=ub, li=lb, ylim=ylim2, xlim=c(-0.1, 6.5), 
-    xlab=expression(bold("Age Groups")), ylab=ylab2, xaxt="n", yaxt="n", axes=FALSE, 
-    lwd=2, cex=1, pch=16, col=scols, main=main, cex.lab=1.2))
-    axis(side=1, at = seq(0, 6, 1), labels = agelab)
+    font.lab=2, xlab="Age Groups", ylab=ylab2, xaxt="n", yaxt="n", axes=FALSE, 
+    lwd=2, pch=16, col=scols, main=main, cex.lab=1.30))
+    axis(side=1, at = seq(0, 6, 1), labels = agelab, cex.axis=1.3)
 }
 
 ###########################################################################################################
@@ -74,21 +74,22 @@ dev.off()
 ######################################## Prop #############################################################
 ###########################################################################################################
 over50 <- read.dta(file.path(derived, "over50_2011.dta"), convert.factors=FALSE) 
-over50 <- transform(over50, Age = ifelse(Female==1, Age - 0.15, Age + 0.15))
+over50 <- transform(over50, Age = ifelse(Female==1, Age + 0.15, Age - 0.15))
 p50 <- subset(over50, Data=="CVL")
 f50 <- subset(over50, Data=='FVL')
 transform(p50, Ratio=Ratio(p50))
 transform(f50, Ratio=Ratio(f50))
 
-png(file=file.path(output, "P50.png"), 
+png(file=file.path(output, "P50_5Oct2017.png"), 
   units="in", width=8, height=8, pointsize=14, res=300, type="cairo")
 plotCVL(p50, main="",
   ylim2=c(0, 1),
-  ylab=expression(bold("Proportion  >50,000 copies/mL")), cols=cols)
-axis(side=2, at = seq(0, 1, 0.2))
+  ylab="", cols=cols)
+axis(side=2, at = seq(0, 1, 0.2), cex.axis=1.3)
+title(ylab="Proportion >50,000 copies/mL ", line=2.8, font.lab=2, cex.lab=1.3)
 legend("top", 
-  c("Males", "Females"),
-  ncol=2, lty=1, pt.cex=1.5, lwd=2, pch=20, col=cols, bty="n")
+  c("Males", "Females"), cex=1.5,
+  ncol=2, lty=1, pt.cex=1.5, lwd=4, pch=20, col=cols, bty="n")
 dev.off()
 
 png(file=file.path(output, "F50.png"), 
