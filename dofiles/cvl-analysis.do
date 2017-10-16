@@ -13,11 +13,20 @@ gen Over50k = (ViralLoad>50000)
 
 tab Female
 tab AgeGrp1
+rename Age Age1
+rename AgeGrp1 Age
 
 ameans ViralLoad
+
 ** Comute geometric mean
-statsby mean=r(mean_g) lb=r(lb_g) ub=r(ub_g), by(AgeGrp1) saving("$derived/gmean2011Age", replace): /// 
+statsby mean=r(mean_g) lb=r(lb_g) ub=r(ub_g), by(Female Age) saving("$derived/gmean2011", replace): /// 
   ameans ViralLoad
+
+
+** Comute geometric mean
+statsby mean=r(mean_g) lb=r(lb_g) ub=r(ub_g), by(Age) saving("$derived/gmean2011Age", replace): /// 
+  ameans ViralLoad
+
 preserve
 use "$derived/gmean2011Age" , clear
 foreach var of varlist * {
@@ -81,6 +90,7 @@ tab DetectVL
 tab Over50k
 
 ameans ViralLoad
+
 ** Comute geometric mean
 statsby mean=r(mean_g) lb=r(lb_g) ub=r(ub_g), by(AgeGrp) saving("$derived/fvl_gmean2011Age", replace): /// 
   ameans ViralLoad

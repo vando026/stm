@@ -16,17 +16,19 @@ Ratio <- function(dat) {
 
 # Rpar <- par(no.readonly = TRUE)
 cols <- c('dodgerblue4', 'indianred4')
-plotCVL <- function(dat, main, cols, ylim2, ylab2="") {
+plotCVL <- function(dat, main, cols, ylim2) {
   
   # Make labels
   len <- length(unique(dat$Age))/2
   agelab <- paste0(seq(15, 45, 5), "-")
   scols <- c(rep(cols[1], len),rep(cols[2], len))
 
+  par(mar=c(4.1, 4.5, 1,0.6))  
   with(dat, plotCI(Age, mean, ui=ub, li=lb, ylim=ylim2, xlim=c(-0.1, 6.5), 
-    font.lab=2, xlab="Age Groups", ylab=ylab2, xaxt="n", yaxt="n", axes=FALSE, 
-    lwd=2, pch=16, col=scols, main=main, cex.lab=1.30))
-    axis(side=1, at = seq(0, 6, 1), labels = agelab, cex.axis=1.3)
+    font.lab=2, xlab="",  ylab="", xaxt="n", yaxt="n", axes=FALSE, 
+    lwd=2, pch=16, col=scols, main=main))
+    axis(side=1, at = seq(0, 6, 1), labels = agelab, cex.axis=1.2)
+    title(xlab="Age Groups", line=2.5, cex.lab=1.3, font.lab=2)
 }
 
 ###########################################################################################################
@@ -39,35 +41,25 @@ output  =  file.path(root, "output")
 gmn <- read.dta13(file.path(derived, "gmean2011.dta"), convert.factors=FALSE) 
 # Add to Age to offset the graph
 gmn <- transform(gmn, Age = ifelse(Female==1, Age + 0.15, Age - 0.15))
-fmn <- subset(gmn, Data=="FVL")
-fmn$ub <- with(fmn, ifelse(ub > 19000, ub - 12000, ub))
-gmn <- subset(gmn, Data=="CVL")
-gmn$ub <- with(gmn, ifelse(ub > 90000, ub - 30000, ub))
+gmn$ub <- with(gmn, ifelse(ub > 90000, ub - 50000, ub))
 transform(gmn, Ratio=Ratio(gmn))
-transform(fmn, Ratio=Ratio(fmn))
 
 ###########################################################################################################
 ######################################## Make plots #######################################################
 ###########################################################################################################
-png(file=file.path(output, "MVL_mn_2011.png"), 
-  units="in", width=8, height=8, pointsize=14, res=300, type="cairo")
+# png(file=file.path(output, "CVL_mn_2011_05Oct2017.png"), 
+  # units="in", width=8, height=8, pointsize=14, res=1200, type="cairo")
+pdf(file=file.path(output, "CVL_mn_2011_05Oct2017.pdf"), 
+  width=6, height=6, pointsize=10)
 plotCVL(gmn, main="",
-  ylab2=expression(bold("Geometric mean viral load (copies/mL)")), cols=cols, ylim2=c(0, 65000))
+  cols=cols, ylim2=c(0, 65000))
 axis(side=2, at = seq(0, 60000, 10000), 
-  labels = formatC(c(seq(0, 50000, 10000), 90000), format="d", big.mark=" "))
-axis.break(axis=2, breakpos=55000, style = "slash", brw=0.02)
-legend("top", c("Males", "Females"),
-  ncol=2, lty=1, pt.cex=1.5, lwd=2, pch=20, col=cols, bty="n")
-dev.off()
-
-png(file=file.path(output, "FMVL_mn_2011.png"), 
-  units="in", width=8, height=8, pointsize=14, res=300, type="cairo")
-plotCVL(fmn, main="",
-  ylab2=expression(bold("Geometric mean viral load (copies/mL)")), cols=cols, ylim2=c(0, 8000))
-axis(side=2, at = seq(0, 8000, 2000), labels=c(0, 2000, 4000, 6000, 20000))
-axis.break(axis=2, breakpos=6500, style = "slash", brw=0.02)
-legend("top", c("Males", "Females"),
-  ncol=2, lty=1, pt.cex=1.5, lwd=2, pch=20, col=cols, bty="n")
+  labels = formatC(c(seq(0, 50000, 10000), 110000), format="d", big.mark=" "))
+axis.break(axis=2, breakpos=57000, style = "slash", brw=0.02)
+title(ylab="Geometric mean viral load (copies/mL)",
+  line=2.8, font.lab=2, cex.lab=1.2)
+legend("top", c("Males", "Females"), cex=1.4,
+  ncol=2, lty=1, pt.cex=1.7, lwd=2.5, pch=20, col=cols, bty="n")
 dev.off()
 
 ###########################################################################################################
@@ -80,107 +72,64 @@ f50 <- subset(over50, Data=='FVL')
 transform(p50, Ratio=Ratio(p50))
 transform(f50, Ratio=Ratio(f50))
 
-png(file=file.path(output, "P50_5Oct2017.png"), 
-  units="in", width=8, height=8, pointsize=14, res=300, type="cairo")
+# png(file=file.path(output, "P50_5Oct2017.png"), 
+  # units="in", width=8, height=8, pointsize=14, res=1200, type="cairo")
+pdf(file=file.path(output, "P50_5Oct2017.pdf"), 
+  width=6, height=6, pointsize=10)
 plotCVL(p50, main="",
-  ylim2=c(0, 1),
-  ylab="", cols=cols)
-axis(side=2, at = seq(0, 1, 0.2), cex.axis=1.3)
-title(ylab="Proportion >50,000 copies/mL ", line=2.8, font.lab=2, cex.lab=1.3)
+  ylim2=c(0, 1), cols=cols)
+axis(side=2, at = seq(0, 1, 0.2), cex.axis=1.0)
+title(ylab="Proportion >50,000 copies/mL ",
+  line=2.8, font.lab=2, cex.lab=1.2)
 legend("top", 
-  c("Males", "Females"), cex=1.5,
-  ncol=2, lty=1, pt.cex=1.5, lwd=4, pch=20, col=cols, bty="n")
-dev.off()
-
-png(file=file.path(output, "F50.png"), 
-  units="in", width=8, height=8, pointsize=14, res=300, type="cairo")
-plotCVL(f50, main="",
-  ylim2=c(0,0.6),
-  ylab=expression(bold("Proportion >50,000 copies/mL ")), cols=cols)
-axis(side=2, at = seq(0, 0.6, 0.1))
-legend("top", 
-  c("Males", "Females"),
+  c("Males", "Females"), cex=1.4,
   ncol=2, lty=1, pt.cex=1.5, lwd=2, pch=20, col=cols, bty="n")
 dev.off()
 
-
-###########################################################################################################
-###################  WARNING MAKE SURE THIS IS THE NO ART DATASET #########################################
-###########################################################################################################
-over50_na <- read.dta(file.path(derived, "over50_2011.dta"), convert.factors=FALSE) 
-# Add to Age to offset the graph
-over50_na <- transform(over50_na, Age = ifelse(Data=="CVL", Age + 0.15, Age - 0.15))
-over50_na$ub <- with(over50_na, ifelse(ub > 1, 1, ub))
-
-fem50_na <- subset(over50_na, Female==1)
-fem50_na$Ratio <- Ratio(Age=Age, dat=fem50_na)
-
-# Cut off UB for men gmna plot
-men50_na <- subset(over50_na, Female==0)
-men50_na$Ratio <- Ratio(Age=Age, dat=men50_na)
-
-png(file=file.path(output, "VL_50_2011_NA.png"), 
-  units="in", width=12, height=8, pointsize=14, res=120, type="cairo")
-par(oma=c(0.1, 3.5, 1,0.2))  
-nf <- layout(matrix(c(1,2,3,3), ncol=2, byrow=TRUE),
-  heights=c(4.0, 1.0))
-
-plotCVL(fem50_na, main="Females (Pre-ART)")
-axis(side=2, at = seq(0, 0.7, 0.1))
-
-plotCVL(men50_na, main="Males (Pre-ART)")
-axis(side=2, at = seq(0, 1.0, 0.2), label=TRUE)
-
-plot(1,1,type="n", xlab='', ylab='', axes=FALSE)
-legend("bottom", c("PVL proportion and 95% CI", "FVL proportion and 95% CI"),
-  ncol=2, lty=1, pt.cex=1.5, lwd=2, pch=20, col=cols,
-  inset=c(0, 0.2))
-  
-mtext("Proportion viral load >50000 copies/ml", line=2, 
-  cex=1, side=2, outer=TRUE, at=0.6)
-
-mtext("Age", line=-6, side=1, outer=TRUE, at=0.48, cex=1)
+png(file=file.path(output, "F50_12Oct2017.png"), 
+  units="in", width=8, height=8, pointsize=14, res=1200, type="cairo")
+plotCVL(f50, main="", ylim2=c(0,0.6), cols=cols)
+axis(side=2, at = seq(0, 0.6, 0.1))
+title(ylab="Proportion >50,000 copies/mL",
+  line=2.8, font.lab=2, cex.lab=1.2)
+legend("top", 
+  c("Males", "Females"), cex=1.2,
+  ncol=2, lty=1, pt.cex=1.5, lwd=2, pch=20, col=cols, bty="n")
 dev.off()
 
-###########################################################################################################
-###########################################################################################################
-###########################################################################################################
-gmn <- read.dta(file.path(derived, "gmean2011.dta"), convert.factors=FALSE) 
-gmn <- transform(gmn, Age = ifelse(Data=="CVL", Age + 0.15, Age - 0.15))
+###############################################################################################
+######################################## COmbine Fig 1 A B#####################################
+###############################################################################################
+pdf(file=file.path(output, "Figure1_16Oct2017.pdf"), 
+  width=9, height=6, pointsize=10)
 
-fem_gmn <- subset(gmn, Female==1)
-fem_gmn$Ratio <- Ratio(Age=Age, dat=fem_gmn)
-fem_gmn$ub <- with(fem_gmn, ifelse(ub > 1e5, ub - 9e4, ub))
+par(mar=c(0.0, 4.5, 1,1.2))  
+nf <- layout(matrix(c(1, 2, 3, 3), ncol=2, byrow=TRUE),
+  heights=c(5.5, 1.0))
 
-# Cut off UB for men gmn plot
-men_gmn <- subset(gmn, Female==0)
-men_gmn$Ratio <- Ratio(Age=Age, dat=men_gmn)
-men_gmn$ub <- with(men_gmn, ifelse(ub > 1e6, ub - 1e6, ub))
+plotCVL(gmn, main="",
+  cols=cols, ylim2=c(0, 65000))
+axis(side=2, at = seq(0, 60000, 10000), cex.axis=1.2,
+  labels = formatC(c(seq(0, 50000, 10000), 110000), format="d", big.mark=" "))
+axis.break(axis=2, breakpos=57000, style = "slash", brw=0.02)
+title(ylab="Geometric mean viral load (copies/mL)",
+  line=2.8, font.lab=2, cex.lab=1.3)
 
-png(file=file.path(output, "VL_gmn_2011_NA.png"), 
-  units="in", width=12, height=8, pointsize=14, res=120, type="cairo")
-par(oma=c(0.1, 3.5, 1,0.2))  
-nf <- layout(matrix(c(1,2,3,3), ncol=2, byrow=TRUE),
-  heights=c(4.0, 1.0))
-layout.show(nf)
+plotCVL(p50, main="",
+  ylim2=c(0, 1), cols=cols)
+axis(side=2, at = seq(0, 1, 0.2), cex.axis=1.2)
+title(ylab="Proportion >50,000 copies/mL ",
+  line=2.8, font.lab=2, cex.lab=1.3)
 
-plotCVL(fem_gmn, main="Females (Pre-ART)", cex2=0.6)
-axis(side=2, at = seq(0, 60000, 10000), 
-  labels = formatC(c(seq(0, 50000, 10000),  150000), format="d", big.mark=" "))
-axis.break(axis=2, breakpos=55000, style = "slash", brw=0.02)
+plot(0,0,type="n", xlab='', ylab='', axes=FALSE)
+legend("bottom", c("Males", "Females"), inset=c(0, -0.6), cex=1.6,
+  ncol=2, lty=1, pt.cex=1.7, lwd=2.6, pch=20, col=cols, bty="n")
 
-plotCVL(men_gmn, main="Males (Pre-ART)", cex2=0.6)
-axis(side=2, at = seq(0, 1.5e5, 25000), 
-  labels = formatC(c(seq(0, 125000, 25000), 1.5e6), format="d", big.mark=" "))
-axis.break(axis=2, breakpos=1.4e5, style = "slash", brw=0.02)
-
-plot(1,1,type="n", xlab='', ylab='', axes=FALSE)
-legend("bottom", c("PVL mean and 95% CI", "FVL mean and 95% CI"),
-  ncol=2, lty=1, pt.cex=1.5, lwd=2, pch=20, col=cols,
-  inset=c(0, 0.2))
-  
-mtext("Viral load copies/ml", line=2, 
-  cex=1, side=2, outer=TRUE, at=0.6)
-mtext("Age", line=-6, side=1, outer=TRUE, at=0.48, cex=1)
 dev.off()
+
+
+
+
+
+
 

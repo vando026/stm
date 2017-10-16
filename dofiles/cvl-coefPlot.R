@@ -41,14 +41,14 @@ directStd <- function(obj) {
   mat <- as.data.frame(mat)
   mat <- transform(mat, Label=as.character(obj$Label[1]))
   colnames(mat) <- c("Female", "Q", "Crude", "rate", "lb", "ub", "Label")
-  mat <- transform(mat, Q=ifelse(Female==1, Q - 0.15, Q + 0.15))
+  mat <- transform(mat, Q=ifelse(Female==1, Q + 0.15, Q - 0.15))
   mat
 }
 # debugonce(directStd)
 # directStd(PMVL)
 
 out <- list(MVL=MVL, PDV=PDV, TI=TI, PMVL=PMVL, PTI=PTI, PPDV=PPDV)
-CTI <- lapply(out, directStd)
+Out <- lapply(out, directStd)
 
 coefPlot <- function(
   mat, pmain, scols,
@@ -59,7 +59,7 @@ coefPlot <- function(
     plotCI(Q, rate, ui=ub, li=lb,
     ylim=ylim2,
     # main=pmain, 
-    lwd=2, cex=1, pch=19, 
+    lwd=1.5, cex=1, pch=19, 
     col=scols, 
     xlab="",
     ylab=Ylab,
@@ -69,28 +69,29 @@ coefPlot <- function(
   axis(2, at=c(0:6), cex.axis=1.5)
 }
 
-png(file=file.path(output, "CVL_quant_Std_05Oct2017.png"), 
-  units="in", width=10, height=10, pointsize=10, res=300, type="cairo")
+# png(file=file.path(output, "CVL_quant_Std_05Oct2017.png"), 
+  # units="in", width=10, height=10, pointsize=10, res=1200, type="cairo")
+pdf(file=file.path(output, "CVL_quant_Std_05Oct2017.pdf"), 
+  width=7.3, height=7.3, pointsize=7)
 par(oma=c(0.0, 3.0, 0.3,0.2))  
 nf <- layout(matrix(c(1:6,rep(7, 3)), ncol=3, byrow=TRUE),
   heights=c(5.7, 5.7, 1.0))
-layout.show(nf)
 cti <- "Community Transmission Index"
 pdv <- "Percent detectable viremia"
 gvl <- "Geometric mean viral load"
 hiv1 <- "(HIV+ only)"
 hiv2 <- "(HIV+ and HIV-)"
-coefPlot(CTI$MVL, pmain=paste("A:", gvl, "\n", hiv1), scols=scols)
-coefPlot(CTI$PDV, pmain=paste("B:", pdv, "\n", hiv1), scols=scols)
-coefPlot(CTI$TI,  pmain=paste("C:", cti, "\n", hiv1), scols=scols)
-coefPlot(CTI$PMVL, pmain=paste("D:", gvl, "\n", hiv2), scols=scols)
-coefPlot(CTI$PPDV, pmain=paste("E:", pdv, "\n", hiv2), scols=scols)
-coefPlot(CTI$PTI,  pmain=paste("F:", cti, "\n", hiv2), scols=scols)
+coefPlot(Out$MVL, pmain=paste("A:", gvl, "\n", hiv1), scols=scols)
+coefPlot(Out$PDV, pmain=paste("B:", pdv, "\n", hiv1), scols=scols)
+coefPlot(Out$TI,  pmain=paste("C:", cti, "\n", hiv1), scols=scols)
+coefPlot(Out$PMVL, pmain=paste("D:", gvl, "\n", hiv2), scols=scols)
+coefPlot(Out$PPDV, pmain=paste("E:", pdv, "\n", hiv2), scols=scols)
+coefPlot(Out$PTI,  pmain=paste("F:", cti, "\n", hiv2), scols=scols)
 plot(1,1,type="n", xlab='', ylab='', axes=FALSE)
 legend("bottom", bty="n",  
-  c("Females  ", "Males"), cex=2.0,
-  ncol=2, lty=1, pt.cex=1.7, lwd=3, pch=20, col=cols,
-  inset=c(3.8,  -1.2))
+  c("Males  ", "Females"), cex=2.2,
+  ncol=2, lty=1, pt.cex=1.7, lwd=1.5, pch=20, col=cols,
+  inset=c(3.8,  -0.8))
 mtext(expression(bold("Seroconversions per 100 person-years")), line=1, cex=1.4, side=2, outer=TRUE, at=0.55)
 mtext(expression(bold("Quartile")), line=-7, side=1, outer=TRUE, at=0.5, cex=1.4)
 dev.off()
