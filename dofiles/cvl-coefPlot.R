@@ -59,7 +59,7 @@ coefPlot <- function(
     plotCI(Q, rate, ui=ub, li=lb,
     ylim=ylim2,
     # main=pmain, 
-    lwd=1.5, cex=1, pch=19, 
+    lwd=2.2, cex=1, pch=19, 
     col=scols, 
     xlab="",
     ylab=Ylab,
@@ -70,10 +70,10 @@ coefPlot <- function(
   axis(2, at=c(0:6), cex.axis=1.5)
 }
 
-# png(file=file.path(output, "CVL_quant_Std_05Oct2017.png"), 
-  # units="in", width=10, height=10, pointsize=10, res=1200, type="cairo")
-pdf(file=file.path(output, "CVL_quant_Std_22Nov2017.pdf"), 
-  width=7.3, height=7.3, pointsize=7)
+tiff(file=file.path(output, "CVL_quant_Std_22Nov2017.tif"), 
+  units="in", width=10, height=10, pointsize=10, res=400, type="cairo")
+# pdf(file=file.path(output, "CVL_quant_Std_22Nov2017.pdf"), 
+  # width=7.3, height=7.3, pointsize=7)
 par(oma=c(0.0, 3.0, 0.3,0.2))  
 nf <- layout(matrix(c(1:6,rep(7, 3)), ncol=3, byrow=TRUE),
   heights=c(5.7, 5.7, 1.0))
@@ -92,7 +92,7 @@ par(mar=c(0.5, 4.5, 0.0,1.2))
 plot(1,1,type="n", xlab='', ylab='', axes=FALSE)
 legend("bottom", bty="n",  
   c("Males  ", "Females"), cex=2.4,
-  ncol=2, lty=1, pt.cex=1.7, lwd=1.5, pch=20, col=cols,
+  ncol=2, lty=1, pt.cex=1.7, lwd=1.9, pch=20, col=cols,
   inset=c(3.8,  0.2))
 mtext(expression(bold("Seroconversions per 100 person-years")), line=1, cex=1.4, side=2, outer=TRUE, at=0.55)
 dev.off()
