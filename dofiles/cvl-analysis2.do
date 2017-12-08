@@ -24,6 +24,9 @@ global opts3 "mlabels("Model 0" "Model 1" "Model 2" "Model 3")"
 global opts6 "drop(0.HIV_pcat 0.AgeGrp1 1.urban 1.Marital 0.PartnerCat 1.AIQ)"
 local opts5 "csv"
 
+capture drop HIV_pcat
+egen HIV_pcat = cut(HIV_Prev), at(0, 15, 25, 100) icode label
+tab HIV_pcat
 
 ***********************************************************************************************************
 **************************************** No Negatives *****************************************************
