@@ -58,8 +58,9 @@ dis  -2*`=e(ll)' + 2*(`=e(df_m)' + 1)
 
 
 ***********************************************************************************************************
-***************************************** CVL vars ******************************************************
+***************************************** PVL vars ******************************************************
 ***********************************************************************************************************
+** Table 3 Model 1 : Unadjusted HR
 global CVL G_MVL PDV TI 
 ** Set 1 unadjusted 
 eststo mm: stcox G_MVL, noshow
@@ -69,7 +70,7 @@ foreach var in PDV TI   {
   esttab mm using "$output/Model_CVL_Unad.`opts5'", $opts11 $opts12 append
 }
 
-** Set 2
+** Table 3 Model 1 : Adjusted without prev 
 global vars "Female i.AgeGrp1 ib1.urban ib1.Marital ib0.PartnerCat ib1.AIQ"
 foreach mod of global CVL {
   eststo `mod': stcox `mod' $vars , noshow
@@ -78,7 +79,7 @@ global opts3 "mlabels("Model 1" "Model 2" "Model 3")"
 global opts4 order($CVL)
 esttab $CVL using "$output/Model_CVL_Cov.`opts5'", $opts1 $opts2 $opts3 $opts4 `opts5' 
 
-** Set 3
+** Table 3 Model 3 : Adjusted with prev
 foreach mod of global CVL {
   eststo `mod': stcox `mod' $prev $vars , noshow
   mat `mod' = r(table)
