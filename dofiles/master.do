@@ -16,7 +16,7 @@ global dofile "$AC_Path/dofiles"
 
 global source "$AC_Path/source"
 global derived "$AC_Path/derived"
-global output "$AC_Path/output"
+global output "$AC_Path/output1"
 
 ** This reads my personal ado files created for this project
 adopath+ "$AC_Path/dofiles/ado"
@@ -29,6 +29,7 @@ global today = subinstr("`=c(current_date)'"," ", "",.)
 dis as text "$today"
 
 set seed 30610
+set seed 200
 
 ***********************************************************************************************************
 **************************************** Run do files *****************************************************
@@ -54,8 +55,8 @@ do "$dofile/cvl-manage2"
 ** do "$dofile/cvl-analysis2"
 
 
-local st 30440
-local stop 30800
+local st 200
+local stop 250
 local sn = `stop' - `st' + 1
 mat TT = J(`sn', 7, .)
 local j = 1
