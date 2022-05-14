@@ -62,8 +62,6 @@ merge 1:1 BSIntID using "`PVLMAL'", nogen keep(1 3)
 merge 1:1 BSIntID using "`ARTCov2011'", nogen keep(1 3) 
 
 
-
-
 ** I have to format vars from Diego file
 foreach var of varlist * {
   qui ds `var', has(type string)
@@ -72,7 +70,6 @@ foreach var of varlist * {
     destring `var', replace
   }
 }
-
 
 ** Make HIV prev a percent
 replace P_PDV = P_PDV * 100
@@ -225,7 +222,7 @@ tempfile Partners
 save "`Partners'" 
 
 ***********************************************************************************************************
-**************************************** Mariatal *********************************************************
+**************************************** Marital *********************************************************
 ***********************************************************************************************************
 use "$AC_Data/WGH_MGH\MGH_Contacts2004to12", clear
 rename IIntId IIntID

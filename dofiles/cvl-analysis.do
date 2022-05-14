@@ -22,7 +22,6 @@ ameans ViralLoad
 statsby mean=r(mean_g) lb=r(lb_g) ub=r(ub_g), by(Female Age) saving("$derived/gmean2011", replace): /// 
   ameans ViralLoad
 
-
 ** Comute geometric mean
 statsby mean=r(mean_g) lb=r(lb_g) ub=r(ub_g), by(Age) saving("$derived/gmean2011Age", replace): /// 
   ameans ViralLoad
@@ -46,7 +45,6 @@ foreach var of varlist * {
 list *, clean
 restore
 
-
 ameans Over50k
 statsby mean=r(mean) lb=r(lb) ub=r(ub), by(AgeGrp1) saving("$derived/prop50_2011Age", replace): /// 
   ameans Over50k 
@@ -67,7 +65,6 @@ foreach var of varlist mean lb ub {
 }
 list *, clean
 restore
-
 
 
 foreach dat in gmean2011 mean2011 med2011 over50_2011 {
